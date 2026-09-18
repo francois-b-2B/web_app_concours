@@ -1,0 +1,205 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------- Auth.js ----------
+
+model User {
+  id             String    @id @default(cuid())
+  name           String?
+  email          String    @unique
+  emailVerified  DateTime?
+  image          String?
+  hashedPassword String?
+
+  accounts    Account[]
+  sessions    Session[]
+  tournaments Tournament[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ---------- Domaine métier ----------
+
+enum TournamentFormat {
+  BELOTE
+  BOULES
+}
+
+enum TournamentStatus {
+  REGISTRATION
+  DRAWN
+  POOLS_IN_PROGRESS
+  FINALS
+  DONE
+}
+
+enum PaymentStatus {
+  PAID
+  PENDING
+}
+
+enum MatchStatus {
+  PENDING
+  DONE
+  TO_REPLAY
+}
+
+enum BracketRound {
+  R64
+  R32
+  R16
+  QF
+  SF
+  FINAL
+}
+
+model Tournament {
+  id        String           @id @default(cuid())
+  ownerId   String
+  name      String
+  date      DateTime
+  location  String?
+  format    TournamentFormat @default(BELOTE)
+  maxTeams  Int              @default(128)
+  status    TournamentStatus @default(REGISTRATION)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  owner          User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  teams          Team[]
+  pools          Pool[]
+  bracketMatches BracketMatch[]
+
+  @@index([ownerId])
+}
+
+model Team {
+  id                 String        @id @default(cuid())
+  tournamentId       String
+  registrationNumber Int
+  player1            String
+  player2            String
+  contact            String?
+  paymentStatus      PaymentStatus @default(PENDING)
+
+  poolId         String?
+  positionInPool Int?
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  pool       Pool?      @relation(fields: [poolId], references: [id], onDelete: SetNull)
+
+  poolMatchesAsA    PoolMatch[]    @relation("PoolMatchTeamA")
+  poolMatchesAsB    PoolMatch[]    @relation("PoolMatchTeamB")
+  bracketMatchesAsA BracketMatch[] @relation("BracketMatchTeamA")
+  bracketMatchesAsB BracketMatch[] @relation("BracketMatchTeamB")
+
+  createdAt DateTime @default(now())
+
+  @@unique([tournamentId, registrationNumber])
+  @@index([poolId])
+}
+
+model Pool {
+  id           String @id @default(cuid())
+  tournamentId String
+  letter       String
+  size         Int
+
+  tournament Tournament  @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teams      Team[]
+  matches    PoolMatch[]
+
+  @@unique([tournamentId, letter])
+}
+
+model PoolMatch {
+  id          String      @id @default(cuid())
+  poolId      String
+  round       Int
+  tableNumber Int?
+  teamAId     String
+  teamBId     String
+  scoreA      Int?
+  scoreB      Int?
+  status      MatchStatus @default(PENDING)
+  winnerId    String?
+
+  pool  Pool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  teamA Team @relation("PoolMatchTeamA", fields: [teamAId], references: [id])
+  teamB Team @relation("PoolMatchTeamB", fields: [teamBId], references: [id])
+
+  @@index([poolId])
+}
+
+model BracketMatch {
+  id           String       @id @default(cuid())
+  tournamentId String
+  roundName    BracketRound
+  slotIndex    Int
+  tableNumber  Int?
+
+  teamAId  String?
+  teamBId  String?
+  scoreA   Int?
+  scoreB   Int?
+  status   MatchStatus @default(PENDING)
+  winnerId String?
+  isBye    Boolean     @default(false)
+
+  sourceMatchAId String? @unique
+  sourceMatchBId String? @unique
+
+  tournament   Tournament    @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamA        Team?         @relation("BracketMatchTeamA", fields: [teamAId], references: [id])
+  teamB        Team?         @relation("BracketMatchTeamB", fields: [teamBId], references: [id])
+  sourceMatchA BracketMatch? @relation("BracketFeedA", fields: [sourceMatchAId], references: [id])
+  sourceMatchB BracketMatch? @relation("BracketFeedB", fields: [sourceMatchBId], references: [id])
+  fedFromA     BracketMatch? @relation("BracketFeedA")
+  fedFromB     BracketMatch? @relation("BracketFeedB")
+
+  @@unique([tournamentId, roundName, slotIndex])
+  @@index([tournamentId])
+}
