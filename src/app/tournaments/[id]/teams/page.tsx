@@ -24,10 +24,9 @@ export default async function TeamsPage({
   const paidCount = tournament.teams.filter((t) => t.paymentStatus === "PAID").length;
 
   return (
-    <main className="flex-1 px-6 py-16">
+    <main className="flex-1 px-6 py-10">
       <div className="max-w-3xl mx-auto flex flex-col gap-8">
         <div>
-          <p className="text-[15px] text-accent font-semibold">{tournament.name}</p>
           <h1 className="text-3xl font-bold">Inscriptions</h1>
           <p className="text-[15px] text-muted mt-1">
             {tournament.teams.length} / {tournament.maxTeams} équipes · {paidCount} réglée(s)
