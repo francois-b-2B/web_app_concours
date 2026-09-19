@@ -9,7 +9,12 @@ import { cn } from "@/lib/cn";
 function SubmitButton({ dirty, hasSavedScore }: { dirty: boolean; hasSavedScore: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button type="submit" variant="secondary" disabled={!dirty || pending} className="mt-1">
+    <Button
+      type="submit"
+      variant={hasSavedScore ? "outline" : "primary"}
+      disabled={!dirty || pending}
+      className="mt-1"
+    >
       {pending ? "Enregistrement…" : hasSavedScore ? "Modifier" : "Enregistrer"}
     </Button>
   );
