@@ -6,16 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
 
-function SubmitButton({ dirty, hasSavedScore }: { dirty: boolean; hasSavedScore: boolean }) {
+function SaveButton({ dirty }: { dirty: boolean }) {
   const { pending } = useFormStatus();
   return (
-    <Button
-      type="submit"
-      variant={hasSavedScore ? "outline" : "primary"}
-      disabled={!dirty || pending}
-      className="mt-1"
-    >
-      {pending ? "Enregistrement…" : hasSavedScore ? "Modifier" : "Enregistrer"}
+    <Button type="submit" variant="primary" disabled={!dirty || pending} className="mt-1">
+      {pending ? "Enregistrement…" : "Enregistrer"}
     </Button>
   );
 }
@@ -41,11 +36,14 @@ export function ScoreForm({
 }) {
   const initialA = initialScoreA?.toString() ?? "";
   const initialB = initialScoreB?.toString() ?? "";
+  const hasSavedScore = initialScoreA !== null && initialScoreB !== null;
+
+  const [locked, setLocked] = useState(hasSavedScore);
   const [scoreA, setScoreA] = useState(initialA);
   const [scoreB, setScoreB] = useState(initialB);
 
   const dirty = scoreA !== initialA || scoreB !== initialB;
-  const hasSavedScore = initialScoreA !== null && initialScoreB !== null;
+  const fieldsDisabled = disabled || locked;
 
   return (
     <form action={action} className="flex flex-col gap-3">
@@ -61,7 +59,7 @@ export function ScoreForm({
           min={0}
           value={scoreA}
           onChange={(e) => setScoreA(e.target.value)}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           className="w-20 text-center"
         />
       </div>
@@ -78,12 +76,25 @@ export function ScoreForm({
           min={0}
           value={scoreB}
           onChange={(e) => setScoreB(e.target.value)}
-          disabled={disabled}
+          disabled={fieldsDisabled}
           className="w-20 text-center"
         />
       </div>
       {note && <p className="text-[13px] text-danger">{note}</p>}
-      <SubmitButton dirty={dirty} hasSavedScore={hasSavedScore} />
+
+      {locked ? (
+        <Button
+          type="button"
+          variant="outline"
+          disabled={disabled}
+          onClick={() => setLocked(false)}
+          className="mt-1"
+        >
+          Modifier
+        </Button>
+      ) : (
+        <SaveButton dirty={dirty} />
+      )}
     </form>
   );
 }

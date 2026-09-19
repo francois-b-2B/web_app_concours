@@ -61,7 +61,7 @@ export default async function DashboardPage() {
                   {t.location ? ` · ${t.location}` : ""}
                 </p>
                 <p className="text-[14px] text-muted">{t._count.teams} équipe(s) inscrite(s)</p>
-                <ButtonLink href={`/tournaments/${t.id}/teams`} variant="secondary" className="mt-2">
+                <ButtonLink href={`/tournaments/${t.id}/teams`} className="mt-2">
                   Ouvrir
                 </ButtonLink>
               </Card>
