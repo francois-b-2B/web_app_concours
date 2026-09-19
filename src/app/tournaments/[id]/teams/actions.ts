@@ -32,6 +32,7 @@ export async function addTeamAction(
   const parsed = addTeamSchema.safeParse({
     player1: formData.get("player1"),
     player2: formData.get("player2"),
+    paymentStatus: formData.get("paymentStatus") || undefined,
     contact: formData.get("contact") || undefined,
   });
 
@@ -55,6 +56,7 @@ export async function addTeamAction(
       registrationNumber: (last?.registrationNumber ?? 0) + 1,
       player1: parsed.data.player1,
       player2: parsed.data.player2,
+      paymentStatus: parsed.data.paymentStatus,
       contact: parsed.data.contact,
     },
   });

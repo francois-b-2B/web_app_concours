@@ -2,8 +2,7 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, Badge } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { ScoreForm } from "@/components/tournament/score-form";
 import { saveMatchScoreAction } from "./actions";
 
 export default async function PoolMatchSheetPage({
@@ -55,41 +54,21 @@ export default async function PoolMatchSheetPage({
                       {match.tableNumber && <Badge>Table {match.tableNumber}</Badge>}
                     </div>
 
-                    <form
+                    <ScoreForm
+                      key={`${match.id}:${match.scoreA}:${match.scoreB}`}
                       action={saveMatchScoreAction.bind(null, id, match.id)}
-                      className="flex flex-col gap-3"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className="flex-1 text-[16px] font-medium">
-                          {match.teamA.player1} et {match.teamA.player2}
-                        </span>
-                        <Input
-                          type="number"
-                          name="scoreA"
-                          min={0}
-                          defaultValue={match.scoreA ?? undefined}
-                          className="w-24 text-center"
-                        />
-                      </div>
-                      <div className="text-center text-[12px] font-semibold text-muted tracking-wide">
-                        CONTRE
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="flex-1 text-[16px] font-medium">
-                          {match.teamB.player1} et {match.teamB.player2}
-                        </span>
-                        <Input
-                          type="number"
-                          name="scoreB"
-                          min={0}
-                          defaultValue={match.scoreB ?? undefined}
-                          className="w-24 text-center"
-                        />
-                      </div>
-                      <Button type="submit" variant="secondary" className="mt-1">
-                        Enregistrer
-                      </Button>
-                    </form>
+                      teamALabel={`${match.teamA.player1} et ${match.teamA.player2}`}
+                      teamBLabel={`${match.teamB.player1} et ${match.teamB.player2}`}
+                      initialScoreA={match.scoreA}
+                      initialScoreB={match.scoreB}
+                      winnerSide={
+                        match.winnerId === match.teamAId
+                          ? "A"
+                          : match.winnerId === match.teamBId
+                            ? "B"
+                            : null
+                      }
+                    />
                   </Card>
                 ))}
             </div>

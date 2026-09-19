@@ -2,8 +2,8 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, Badge } from "@/components/ui/card";
-import { Button, ButtonLink } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { ButtonLink } from "@/components/ui/button";
+import { ScoreForm } from "@/components/tournament/score-form";
 import type { BracketRoundName } from "@/lib/tournament";
 import { launchFinalsAction, saveBracketScoreAction } from "./actions";
 import { LaunchFinalsButton } from "./launch-button";
@@ -95,62 +95,31 @@ export default async function BracketPage({ params }: { params: Promise<{ id: st
                 .sort((a, b) => a.slotIndex - b.slotIndex)
                 .map((match) => (
                   <Card key={match.id} className="flex flex-col gap-3">
-                    {match.tableNumber && <Badge className="self-start">Table {match.tableNumber}</Badge>}
+                    {match.tableNumber && (
+                      <Badge className="self-start">Table {match.tableNumber}</Badge>
+                    )}
                     {match.isBye ? (
                       <p className="text-[14px] text-muted">
                         {teamLabel(match.teamA ?? match.teamB)} qualifié(e) d&apos;office (bye)
                       </p>
                     ) : (
-                      <form
+                      <ScoreForm
+                        key={`${match.id}:${match.scoreA}:${match.scoreB}:${match.teamAId}:${match.teamBId}`}
                         action={saveBracketScoreAction.bind(null, id, match.id)}
-                        className="flex flex-col gap-2"
-                      >
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`flex-1 text-[14px] ${
-                              match.winnerId === match.teamAId ? "font-semibold" : "text-muted"
-                            }`}
-                          >
-                            {teamLabel(match.teamA)}
-                          </span>
-                          <Input
-                            type="number"
-                            name="scoreA"
-                            min={0}
-                            disabled={!match.teamAId || !match.teamBId}
-                            defaultValue={match.scoreA ?? undefined}
-                            className="w-16 text-center py-1.5"
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`flex-1 text-[14px] ${
-                              match.winnerId === match.teamBId ? "font-semibold" : "text-muted"
-                            }`}
-                          >
-                            {teamLabel(match.teamB)}
-                          </span>
-                          <Input
-                            type="number"
-                            name="scoreB"
-                            min={0}
-                            disabled={!match.teamAId || !match.teamBId}
-                            defaultValue={match.scoreB ?? undefined}
-                            className="w-16 text-center py-1.5"
-                          />
-                        </div>
-                        {match.status === "TO_REPLAY" && (
-                          <p className="text-[12px] text-danger">Égalité — à rejouer</p>
-                        )}
-                        <Button
-                          type="submit"
-                          variant="secondary"
-                          size="md"
-                          disabled={!match.teamAId || !match.teamBId}
-                        >
-                          Enregistrer
-                        </Button>
-                      </form>
+                        teamALabel={teamLabel(match.teamA)}
+                        teamBLabel={teamLabel(match.teamB)}
+                        initialScoreA={match.scoreA}
+                        initialScoreB={match.scoreB}
+                        disabled={!match.teamAId || !match.teamBId}
+                        winnerSide={
+                          match.winnerId === match.teamAId
+                            ? "A"
+                            : match.winnerId === match.teamBId
+                              ? "B"
+                              : null
+                        }
+                        note={match.status === "TO_REPLAY" ? "Égalité — à rejouer" : undefined}
+                      />
                     )}
                   </Card>
                 ))}

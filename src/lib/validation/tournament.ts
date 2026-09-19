@@ -11,5 +11,6 @@ export const createTournamentSchema = z.object({
 export const addTeamSchema = z.object({
   player1: z.string().min(1, "Joueur 1 requis."),
   player2: z.string().min(1, "Joueur 2 requis."),
+  paymentStatus: z.enum(["PAID", "PENDING"]).default("PENDING"),
   contact: z.string().optional(),
 });

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import Link from "next/link";
 import { Card } from "@/components/ui/card";
 import { Input, Label } from "@/components/ui/input";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Button } from "@/components/ui/button";
 import { loginAction, googleSignInAction } from "./actions";
 
@@ -37,10 +38,9 @@ export default function LoginPage() {
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Mot de passe</Label>
-            <Input
+            <PasswordInput
               id="password"
               name="password"
-              type="password"
               required
               autoComplete="current-password"
             />
