@@ -21,14 +21,15 @@ export async function createTournamentAction(
     date: formData.get("date"),
     location: formData.get("location") || undefined,
     format: formData.get("format"),
-    maxTeams: formData.get("maxTeams"),
+    teamComposition: formData.get("teamComposition") || undefined,
+    competitionMode: formData.get("competitionMode"),
   });
 
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide." };
   }
 
-  const { name, date, location, format, maxTeams } = parsed.data;
+  const { name, date, location, format, teamComposition, competitionMode } = parsed.data;
 
   const tournament = await prisma.tournament.create({
     data: {
@@ -37,7 +38,9 @@ export async function createTournamentAction(
       date: new Date(date),
       location,
       format,
-      maxTeams,
+      teamComposition: format === "BOULES" ? teamComposition : "DOUBLETTES",
+      competitionMode,
+      maxTeams: 256,
     },
   });
 

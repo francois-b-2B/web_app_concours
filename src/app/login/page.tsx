@@ -20,7 +20,7 @@ export default function LoginPage() {
         </div>
 
         <form action={googleSignInAction}>
-          <Button type="submit" variant="secondary" className="w-full" disabled={pending}>
+          <Button type="submit" className="w-full" disabled={pending}>
             Continuer avec Google
           </Button>
         </form>
@@ -33,8 +33,8 @@ export default function LoginPage() {
 
         <form action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required autoComplete="email" />
+            <Label htmlFor="identifier">Identifiant</Label>
+            <Input id="identifier" name="identifier" type="text" required autoComplete="username" />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Mot de passe</Label>

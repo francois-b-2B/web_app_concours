@@ -1,8 +1,21 @@
 import type { PoolPlan, PoolPlanEntry } from "./types";
 
+export const MIN_TEAMS_TO_DRAW = 6;
+
+export function getDrawMinimumTeamMessage(teamCount: number): string | null {
+  if (teamCount >= MIN_TEAMS_TO_DRAW) return null;
+
+  const missingTeamCount = MIN_TEAMS_TO_DRAW - teamCount;
+  const teamLabel = missingTeamCount === 1 ? "équipe" : "équipes";
+  return (
+    `Il faut au moins ${MIN_TEAMS_TO_DRAW} équipes inscrites pour lancer le tirage. ` +
+    `Encore ${missingTeamCount} ${teamLabel} à inscrire.`
+  );
+}
+
 /**
  * Numérote les poules comme des colonnes de tableur : A, B, ..., Z, AA, AB, ...
- * Nécessaire au-delà de 26 poules (jusqu'à 128 équipes / 3 ≈ 42 poules max).
+ * Nécessaire au-delà de 26 poules (jusqu'à 256 équipes / 3 ≈ 85 poules max).
  */
 export function poolLetter(index1Based: number): string {
   let n = index1Based;

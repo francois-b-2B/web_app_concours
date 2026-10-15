@@ -12,7 +12,7 @@ export default {
   providers: [
     Google,
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: { identifier: {}, password: {} },
       authorize: async () => null,
     }),
   ],

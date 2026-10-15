@@ -14,20 +14,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Google,
     Credentials({
-      credentials: { email: {}, password: {} },
+      credentials: { identifier: {}, password: {} },
       authorize: async (credentials) => {
         const parsed = loginSchema.safeParse(credentials);
         if (!parsed.success) return null;
 
         const user = await prisma.user.findUnique({
-          where: { email: parsed.data.email },
+          where: { username: parsed.data.identifier },
         });
-        if (!user?.hashedPassword) return null;
+        const legacyUser =
+          user ??
+          (await prisma.user.findUnique({ where: { email: parsed.data.identifier } }));
+        if (!legacyUser?.hashedPassword) return null;
 
-        const valid = await bcrypt.compare(parsed.data.password, user.hashedPassword);
+        const valid = await bcrypt.compare(parsed.data.password, legacyUser.hashedPassword);
         if (!valid) return null;
 
-        return user;
+        return legacyUser;
       },
     }),
   ],

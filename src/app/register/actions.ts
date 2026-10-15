@@ -12,7 +12,7 @@ export async function registerAction(
   formData: FormData
 ): Promise<AuthActionState> {
   const parsed = registerSchema.safeParse({
-    name: formData.get("name"),
+    username: formData.get("username"),
     email: formData.get("email"),
     password: formData.get("password"),
   });
@@ -21,18 +21,25 @@ export async function registerAction(
     return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide." };
   }
 
-  const { name, email, password } = parsed.data;
+  const { username, email, password } = parsed.data;
 
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) {
-    return { error: "Un compte existe déjà avec cet email." };
+  const existingUsername = await prisma.user.findUnique({ where: { username } });
+  if (existingUsername) {
+    return { error: "Cet identifiant est déjà utilisé." };
+  }
+
+  if (email) {
+    const existingEmail = await prisma.user.findUnique({ where: { email } });
+    if (existingEmail) {
+      return { error: "Un compte existe déjà avec cette adresse e-mail." };
+    }
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  await prisma.user.create({ data: { name, email, hashedPassword } });
+  await prisma.user.create({ data: { name: username, username, email, hashedPassword } });
 
   try {
-    await signIn("credentials", { email, password, redirectTo: "/dashboard" });
+    await signIn("credentials", { identifier: username, password, redirectTo: "/dashboard" });
     return {};
   } catch (error) {
     if (error instanceof AuthError) {

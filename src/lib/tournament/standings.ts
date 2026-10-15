@@ -92,8 +92,7 @@ export interface PoolForStandings {
 /**
  * Classement général tous poules confondues : d'abord tous les 1ers de
  * poule (départagés entre eux), puis tous les 2èmes, etc. C'est cette liste,
- * tronquée à la taille du tableau final, qui donne les qualifiés (2 premiers
- * de chaque poule + repêchage des meilleurs suivants).
+ * tronquée à la taille du tableau final (64 maximum), qui donne les qualifiés.
  */
 export function computeGeneralStandings(pools: PoolForStandings[]): GeneralStandingEntry[] {
   const registrationNumberOf = new Map(

@@ -46,7 +46,8 @@ export default async function PoolsOverviewPage({
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
           {tournament.pools.map((pool) => {
-            const playedCount = pool.matches.filter((m) => m.status !== "PENDING").length;
+            const playedCount = pool.matches.filter((m) => m.status === "DONE").length;
+            const isComplete = pool.matches.length > 0 && playedCount === pool.matches.length;
             return (
               <Card key={pool.id} className="flex flex-col gap-4">
                 <div className="flex items-center justify-between">
@@ -62,7 +63,10 @@ export default async function PoolsOverviewPage({
                     </li>
                   ))}
                 </ul>
-                <ButtonLink href={`/tournaments/${id}/pools/${pool.letter}`} variant="secondary">
+                <ButtonLink
+                  href={`/tournaments/${id}/pools/${pool.letter}`}
+                  variant={isComplete ? "secondary" : "primary"}
+                >
                   Feuille de match
                 </ButtonLink>
               </Card>

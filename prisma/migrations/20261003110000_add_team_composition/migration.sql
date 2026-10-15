@@ -1,0 +1,7 @@
+CREATE TYPE "TeamComposition" AS ENUM ('DOUBLETTES', 'TRIPLETTES');
+
+ALTER TABLE "Tournament"
+ADD COLUMN "teamComposition" "TeamComposition" NOT NULL DEFAULT 'DOUBLETTES';
+
+ALTER TABLE "Team"
+ADD COLUMN "player3" TEXT;

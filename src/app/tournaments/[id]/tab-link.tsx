@@ -13,10 +13,11 @@ export function TabLink({ href, label }: { href: string; label: string }) {
       href={href}
       className={cn(
         "rounded-pill px-4 py-2 text-[14px] font-medium transition-colors",
-        active ? "bg-accent text-white" : "text-muted hover:text-foreground"
+        active ? "bg-accent text-white" : "text-muted hover:text-foreground",
+        active && "active-tab-shine"
       )}
     >
-      {label}
+      <span>{label}</span>
     </Link>
   );
 }

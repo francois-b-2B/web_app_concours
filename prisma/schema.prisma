@@ -12,14 +12,16 @@ datasource db {
 model User {
   id             String    @id @default(cuid())
   name           String?
-  email          String    @unique
+  username       String?   @unique
+  email          String?   @unique
   emailVerified  DateTime?
   image          String?
   hashedPassword String?
 
-  accounts    Account[]
-  sessions    Session[]
-  tournaments Tournament[]
+  accounts        Account[]
+  sessions        Session[]
+  tournaments     Tournament[]
+  contactMessages ContactMessage[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -68,6 +70,16 @@ enum TournamentFormat {
   BOULES
 }
 
+enum TeamComposition {
+  DOUBLETTES
+  TRIPLETTES
+}
+
+enum CompetitionMode {
+  POOLS
+  AURARD
+}
+
 enum TournamentStatus {
   REGISTRATION
   DRAWN
@@ -97,23 +109,47 @@ enum BracketRound {
 }
 
 model Tournament {
-  id        String           @id @default(cuid())
-  ownerId   String
-  name      String
-  date      DateTime
-  location  String?
-  format    TournamentFormat @default(BELOTE)
-  maxTeams  Int              @default(128)
-  status    TournamentStatus @default(REGISTRATION)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id              String           @id @default(cuid())
+  ownerId         String
+  name            String
+  date            DateTime
+  location        String?
+  format          TournamentFormat @default(BELOTE)
+  teamComposition TeamComposition  @default(DOUBLETTES)
+  competitionMode CompetitionMode  @default(POOLS)
+  aurardRounds    Int?
+  aurardQualifierCount Int?
+  aurardQualifierChoiceRequired Boolean @default(false)
+  maxTeams        Int              @default(256)
+  status          TournamentStatus @default(REGISTRATION)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
-  owner          User           @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  teams          Team[]
-  pools          Pool[]
-  bracketMatches BracketMatch[]
+  owner           User             @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  teams           Team[]
+  aurardMatches   AurardMatch[]
+  pools           Pool[]
+  bracketMatches  BracketMatch[]
+  contactMessages ContactMessage[]
 
   @@index([ownerId])
+}
+
+model ContactMessage {
+  id           String   @id @default(cuid())
+  userId       String
+  tournamentId String
+  name         String
+  email        String
+  subjects     String[]
+  message      String   @db.Text
+  createdAt    DateTime @default(now())
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([tournamentId])
 }
 
 model Team {
@@ -122,6 +158,7 @@ model Team {
   registrationNumber Int
   player1            String
   player2            String
+  player3            String?
   contact            String?
   paymentStatus      PaymentStatus @default(PENDING)
 
@@ -133,6 +170,8 @@ model Team {
 
   poolMatchesAsA    PoolMatch[]    @relation("PoolMatchTeamA")
   poolMatchesAsB    PoolMatch[]    @relation("PoolMatchTeamB")
+  aurardMatchesAsA  AurardMatch[]  @relation("AurardMatchTeamA")
+  aurardMatchesAsB  AurardMatch[]  @relation("AurardMatchTeamB")
   bracketMatchesAsA BracketMatch[] @relation("BracketMatchTeamA")
   bracketMatchesAsB BracketMatch[] @relation("BracketMatchTeamB")
 
@@ -140,6 +179,28 @@ model Team {
 
   @@unique([tournamentId, registrationNumber])
   @@index([poolId])
+}
+
+model AurardMatch {
+  id           String      @id @default(cuid())
+  tournamentId String
+  round        Int
+  slotIndex    Int
+  tableNumber  Int?
+  teamAId      String?
+  teamBId      String?
+  scoreA       Int?
+  scoreB       Int?
+  status       MatchStatus @default(PENDING)
+  winnerId     String?
+  isBye        Boolean     @default(false)
+
+  tournament Tournament @relation(fields: [tournamentId], references: [id], onDelete: Cascade)
+  teamA      Team?      @relation("AurardMatchTeamA", fields: [teamAId], references: [id])
+  teamB      Team?      @relation("AurardMatchTeamB", fields: [teamBId], references: [id])
+
+  @@unique([tournamentId, round, slotIndex])
+  @@index([tournamentId, round])
 }
 
 model Pool {

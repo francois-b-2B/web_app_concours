@@ -2,8 +2,10 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, Badge } from "@/components/ui/card";
+import { POOL_SCORE_LOCK_MESSAGE } from "@/lib/tournament/score-integrity";
 import { ScoreForm } from "@/components/tournament/score-form";
 import { saveMatchScoreAction } from "./actions";
+import { playingAreaLabel } from "@/lib/tournament";
 
 export default async function PoolMatchSheetPage({
   params,
@@ -14,8 +16,9 @@ export default async function PoolMatchSheetPage({
   const session = await auth();
   if (!session?.user.id) notFound();
 
-  const tournament = await prisma.tournament.findUnique({ where: { id } });
+  const tournament = await prisma.tournament.findUnique({ where: { id }, include: { _count: { select: { bracketMatches: true } } } });
   if (!tournament || tournament.ownerId !== session.user.id) notFound();
+  const playingArea = playingAreaLabel(tournament.format);
 
   const pool = await prisma.pool.findUnique({
     where: { tournamentId_letter: { tournamentId: id, letter } },
@@ -35,6 +38,7 @@ export default async function PoolMatchSheetPage({
       <div className="max-w-2xl mx-auto flex flex-col gap-8">
         <h1 className="text-3xl font-bold">Poule {pool.letter}</h1>
 
+        {tournament._count.bracketMatches > 0 && <p className="text-sm text-muted">{POOL_SCORE_LOCK_MESSAGE}</p>}
         {rounds.map((round) => (
           <div key={round} className="flex flex-col gap-4">
             <h2 className="text-[15px] font-semibold text-muted uppercase tracking-wide">
@@ -51,7 +55,7 @@ export default async function PoolMatchSheetPage({
                         {match.status === "DONE" && "Terminé"}
                         {match.status === "PENDING" && "À jouer"}
                       </span>
-                      {match.tableNumber && <Badge>Table {match.tableNumber}</Badge>}
+                      {match.tableNumber && <Badge>{playingArea} {match.tableNumber}</Badge>}
                     </div>
 
                     <ScoreForm
@@ -59,6 +63,7 @@ export default async function PoolMatchSheetPage({
                       action={saveMatchScoreAction.bind(null, id, match.id)}
                       teamALabel={`${match.teamA.player1} et ${match.teamA.player2}`}
                       teamBLabel={`${match.teamB.player1} et ${match.teamB.player2}`}
+                      disabled={tournament._count.bracketMatches > 0}
                       initialScoreA={match.scoreA}
                       initialScoreB={match.scoreB}
                       winnerSide={

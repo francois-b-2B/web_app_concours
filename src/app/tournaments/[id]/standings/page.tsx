@@ -3,7 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, Badge } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
-import { rankPoolStandings, computeGeneralStandings, bracketSizeForPoolCount } from "@/lib/tournament";
+import { aurardQualificationDescription, aurardQualifierCountForTournament, aurardRoundsComplete, rankPoolStandings, computeGeneralStandings, bracketSizeForPoolCount, rankAurardTeams } from "@/lib/tournament";
 
 export default async function StandingsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -12,6 +12,48 @@ export default async function StandingsPage({ params }: { params: Promise<{ id: 
 
   const tournament = await prisma.tournament.findUnique({ where: { id } });
   if (!tournament || tournament.ownerId !== session.user.id) notFound();
+
+  if (tournament.competitionMode === "AURARD") {
+    const teams = await prisma.team.findMany({ where: { tournamentId: id }, orderBy: { registrationNumber: "asc" } });
+    const matches = await prisma.aurardMatch.findMany({ where: { tournamentId: id } });
+    const ranking = rankAurardTeams(
+      teams.map((team) => ({ id: team.id, registrationNumber: team.registrationNumber })),
+      matches,
+      tournament.format === "BELOTE" ? { pointsFor: 2000, pointsAgainst: 1000 } : { pointsFor: 13, pointsAgainst: 7 },
+    );
+    const teamName = (id: string) => {
+      const team = teams.find((item) => item.id === id);
+      return team ? [team.player1, team.player2, team.player3].filter(Boolean).join(" et ") : "Équipe inconnue";
+    };
+    const currentRound = matches.length ? Math.max(...matches.map((match) => match.round)) : 0;
+    const complete = aurardRoundsComplete(teams.map((team) => team.id), matches, tournament.aurardRounds);
+    const qualifiedCount = aurardQualifierCountForTournament({
+      teamCount: teams.length,
+      savedCount: tournament.aurardQualifierCount,
+      hasStarted: tournament.status !== "REGISTRATION",
+    });
+    return (
+      <main className="flex-1 px-6 py-10">
+        <div className="max-w-4xl mx-auto flex flex-col gap-8">
+          <div>
+            <h1 className="text-3xl font-bold">Classement des rondes</h1>
+            <p className="mt-2 text-muted">Ronde {currentRound} · victoires, points marqués puis différence de points.</p>
+          </div>
+          <Card className="p-0 overflow-hidden">
+            <table className="w-full text-[14px]">
+              <thead><tr className="border-b border-border text-left text-muted">
+                <th className="px-4 py-3">#</th><th className="px-4 py-3">Équipe</th><th className="px-4 py-3 text-center">J</th><th className="px-4 py-3 text-center">V</th><th className="px-4 py-3 text-center">Points</th><th className="px-4 py-3 text-center">Diff.</th><th className="px-4 py-3 text-right">Qualifiée</th>
+              </tr></thead>
+              <tbody>{ranking.map((row, index) => <tr key={row.teamId} className="border-b border-border last:border-0">
+                <td className="px-4 py-3 text-muted">{index + 1}</td><td className="px-4 py-3">{teamName(row.teamId)}</td><td className="px-4 py-3 text-center">{row.played}</td><td className="px-4 py-3 text-center">{row.wins}</td><td className="px-4 py-3 text-center">{row.pointsFor}</td><td className="px-4 py-3 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td><td className="px-4 py-3 text-right">{complete && index < qualifiedCount && <Badge>Qualifiée</Badge>}</td>
+              </tr>)}</tbody>
+            </table>
+          </Card>
+          {complete && <p className="text-center text-muted">{aurardQualificationDescription(qualifiedCount)}</p>}
+        </div>
+      </main>
+    );
+  }
 
   const pools = await prisma.pool.findMany({
     where: { tournamentId: id },

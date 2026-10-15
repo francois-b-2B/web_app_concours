@@ -21,7 +21,7 @@ export default function RegisterPage() {
         </div>
 
         <form action={googleSignInAction}>
-          <Button type="submit" variant="secondary" className="w-full" disabled={pending}>
+          <Button type="submit" className="w-full" disabled={pending}>
             Continuer avec Google
           </Button>
         </form>
@@ -34,12 +34,12 @@ export default function RegisterPage() {
 
         <form action={formAction} className="flex flex-col gap-4">
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="name">Nom</Label>
-            <Input id="name" name="name" type="text" required autoComplete="name" />
+            <Label htmlFor="username">Identifiant</Label>
+            <Input id="username" name="username" type="text" required autoComplete="username" />
           </div>
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="email">Email</Label>
-            <Input id="email" name="email" type="email" required autoComplete="email" />
+            <Label htmlFor="email">E-mail (facultatif)</Label>
+            <Input id="email" name="email" type="email" autoComplete="email" />
           </div>
           <div className="flex flex-col gap-1.5">
             <Label htmlFor="password">Mot de passe</Label>

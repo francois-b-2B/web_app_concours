@@ -2,68 +2,25 @@
 
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { withOwnedTournament } from "@/lib/tournament/owned-transaction";
+import { POOL_SCORE_LOCK_MESSAGE, scoreResult, validScore, type ScoreActionResult } from "@/lib/tournament/score-integrity";
 
-async function requireOwnedMatch(tournamentId: string, matchId: string) {
-  const session = await auth();
-  if (!session?.user.id) notFound();
-
-  const match = await prisma.poolMatch.findUnique({
-    where: { id: matchId },
-    include: { pool: { include: { tournament: true } } },
-  });
-  if (
-    !match ||
-    match.pool.tournamentId !== tournamentId ||
-    match.pool.tournament.ownerId !== session.user.id
-  ) {
-    notFound();
-  }
-
-  return match;
-}
-
-export async function saveMatchScoreAction(
-  tournamentId: string,
-  matchId: string,
-  formData: FormData
-) {
-  const match = await requireOwnedMatch(tournamentId, matchId);
-
+export async function saveMatchScoreAction(tournamentId: string, matchId: string, formData: FormData): Promise<ScoreActionResult> {
   const rawA = formData.get("scoreA");
   const rawB = formData.get("scoreB");
   const scoreA = rawA === null || rawA === "" ? null : Number(rawA);
   const scoreB = rawB === null || rawB === "" ? null : Number(rawB);
-
-  if (
-    (scoreA !== null && (!Number.isInteger(scoreA) || scoreA < 0)) ||
-    (scoreB !== null && (!Number.isInteger(scoreB) || scoreB < 0))
-  ) {
-    return;
-  }
-
-  let status: "PENDING" | "DONE" | "TO_REPLAY" = "PENDING";
-  let winnerId: string | null = null;
-
-  if (scoreA !== null && scoreB !== null) {
-    if (scoreA > scoreB) {
-      status = "DONE";
-      winnerId = match.teamAId;
-    } else if (scoreB > scoreA) {
-      status = "DONE";
-      winnerId = match.teamBId;
-    } else {
-      status = "TO_REPLAY";
-    }
-  }
-
-  await prisma.poolMatch.update({
-    where: { id: matchId },
-    data: { scoreA, scoreB, status, winnerId },
+  if (!validScore(scoreA) || !validScore(scoreB)) return { error: "Saisissez des scores entiers positifs valides." };
+  const result = await withOwnedTournament(tournamentId, async (tx): Promise<ScoreActionResult> => {
+    if (await tx.bracketMatch.count({ where: { tournamentId } })) return { error: POOL_SCORE_LOCK_MESSAGE };
+    const match = await tx.poolMatch.findFirst({ where: { id: matchId, pool: { tournamentId } } });
+    if (!match) notFound();
+    await tx.poolMatch.update({ where: { id: matchId }, data: { scoreA, scoreB, ...scoreResult(match.teamAId, match.teamBId, scoreA, scoreB) } });
+    return {};
   });
-
-  const pool = await prisma.pool.findUnique({ where: { id: match.poolId } });
-  revalidatePath(`/tournaments/${tournamentId}/pools/${pool?.letter}`);
-  revalidatePath(`/tournaments/${tournamentId}/standings`);
+  if (!result.error) {
+    revalidatePath(`/tournaments/${tournamentId}`, "layout");
+    revalidatePath(`/public/tournaments/${tournamentId}`);
+  }
+  return result;
 }

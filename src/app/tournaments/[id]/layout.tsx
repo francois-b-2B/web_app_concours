@@ -19,12 +19,25 @@ export default async function TournamentLayout({
   const tournament = await prisma.tournament.findUnique({ where: { id } });
   if (!tournament || tournament.ownerId !== session.user.id) notFound();
 
+  const sportLabel = tournament.format === "BELOTE" ? "Belote" : "Boules";
+  const compositionLabel = tournament.teamComposition === "TRIPLETTES" ? "Triplettes" : "Doublettes";
+  const formatLabel = tournament.competitionMode === "AURARD"
+    ? "Rondes + tableau final"
+    : "Poules + tableau final";
+
   const tabs = [
     { href: `/tournaments/${id}/teams`, label: "Inscriptions" },
     { href: `/tournaments/${id}/draw`, label: "Tirage" },
-    { href: `/tournaments/${id}/pools`, label: "Poules" },
+    ...(tournament.competitionMode === "POOLS"
+      ? [{ href: `/tournaments/${id}/pools`, label: "Poules" }]
+      : []),
     { href: `/tournaments/${id}/standings`, label: "Classement" },
     { href: `/tournaments/${id}/bracket`, label: "Tableau final" },
+    { href: `/tournaments/${id}/export`, label: "Exporter" },
+    { href: `/tournaments/${id}/poster`, label: "Affiche" },
+    { href: `/tournaments/${id}/share`, label: "QR code" },
+    { href: `/tournaments/${id}/rules`, label: "Les règles" },
+    { href: `/tournaments/${id}/contact`, label: "Contact" },
   ];
 
   return (
@@ -33,10 +46,13 @@ export default async function TournamentLayout({
         <div className="max-w-5xl mx-auto px-6 py-5 flex flex-col gap-4">
           <div className="flex items-center justify-between">
             <div>
-              <Link href="/dashboard" className="text-[13px] text-muted hover:text-foreground">
+              <Link href="/dashboard" className="text-lg font-medium text-muted hover:text-foreground">
                 ← Tableau de bord
               </Link>
               <h1 className="text-xl font-semibold">{tournament.name}</h1>
+              <p className="text-sm text-muted">
+                {sportLabel} • {compositionLabel} • {formatLabel}
+              </p>
             </div>
           </div>
           <nav className="flex flex-wrap gap-1 -mx-2">

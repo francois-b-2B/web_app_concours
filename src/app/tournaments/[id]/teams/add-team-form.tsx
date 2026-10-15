@@ -7,7 +7,11 @@ import type { AddTeamState } from "./actions";
 
 export function AddTeamForm({
   action,
+  disabled,
+  triplettes = false,
 }: {
+  disabled?: boolean;
+  triplettes?: boolean;
   action: (prevState: AddTeamState, formData: FormData) => Promise<AddTeamState>;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
@@ -26,8 +30,10 @@ export function AddTeamForm({
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col sm:flex-row gap-3 items-start">
+      <fieldset disabled={disabled || pending} className="contents">
       <Input ref={player1Ref} name="player1" placeholder="Joueur 1" required className="sm:flex-1" />
       <Input name="player2" placeholder="Joueur 2" required className="sm:flex-1" />
+      {triplettes && <Input name="player3" placeholder="Joueur 3" required className="sm:flex-1" />}
       <Select name="paymentStatus" defaultValue="PENDING" className="sm:w-40">
         <option value="PENDING">En attente</option>
         <option value="PAID">Réglée</option>
@@ -36,6 +42,7 @@ export function AddTeamForm({
       <Button type="submit" disabled={pending} className="whitespace-nowrap">
         {pending ? "Ajout…" : "Ajouter"}
       </Button>
+      </fieldset>
       {state.error && <p className="text-[14px] text-danger sm:basis-full">{state.error}</p>}
     </form>
   );

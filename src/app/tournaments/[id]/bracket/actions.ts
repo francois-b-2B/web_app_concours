@@ -2,13 +2,16 @@
 
 import { revalidatePath } from "next/cache";
 import { notFound } from "next/navigation";
-import { auth } from "@/auth";
-import { prisma } from "@/lib/prisma";
+import { withOwnedTournament } from "@/lib/tournament/owned-transaction";
+import { planBracketScore, poolResultsComplete, FINALS_WAIT_MESSAGE, validScore, type ScoreActionResult } from "@/lib/tournament/score-integrity";
 import {
   computeGeneralStandings,
+  aurardQualifierCountForTournament,
+  rankAurardTeams,
   bracketSizeForPoolCount,
   buildBracket,
   assignTableNumbers,
+  aurardRoundsComplete,
   type BracketRoundName,
 } from "@/lib/tournament";
 
@@ -16,62 +19,61 @@ export interface LaunchFinalsState {
   error?: string;
 }
 
-async function requireOwnedTournament(tournamentId: string) {
-  const session = await auth();
-  if (!session?.user.id) notFound();
-
-  const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
-  if (!tournament || tournament.ownerId !== session.user.id) notFound();
-
-  return tournament;
-}
-
 export async function launchFinalsAction(
   tournamentId: string,
   _prevState: LaunchFinalsState,
   _formData: FormData
 ): Promise<LaunchFinalsState> {
-  await requireOwnedTournament(tournamentId);
+  const result = await withOwnedTournament(tournamentId, async (tx): Promise<LaunchFinalsState> => {
 
-  const existing = await prisma.bracketMatch.count({ where: { tournamentId } });
-  if (existing > 0) {
-    return { error: "La phase finale a déjà été lancée." };
-  }
+    const existing = await tx.bracketMatch.count({ where: { tournamentId } });
+    if (existing > 0) {
+      return { error: "La phase finale a déjà été lancée." };
+    }
 
-  const pools = await prisma.pool.findMany({
-    where: { tournamentId },
-    include: { teams: true, matches: true },
-  });
-  if (pools.length === 0) {
-    return { error: "Le tirage des poules n'a pas encore été effectué." };
-  }
+    const tournament = await tx.tournament.findUnique({ where: { id: tournamentId } });
+    if (!tournament) notFound();
 
-  const registrationNumberById = new Map(
-    pools.flatMap((p) => p.teams.map((t) => [t.id, t.registrationNumber] as const))
-  );
+    let bracketSize: 4 | 8 | 16 | 32 | 64 = 8;
+    let qualifiers: Array<{ id: string; registrationNumber: number }>;
+    if (tournament.competitionMode === "AURARD") {
+      const teams = await tx.team.findMany({ where: { tournamentId }, orderBy: { registrationNumber: "asc" } });
+      const matches = await tx.aurardMatch.findMany({ where: { tournamentId } });
+      if (!tournament.aurardRounds || matches.length === 0) return { error: "Les rondes n'ont pas encore été lancées." };
+      if (!aurardRoundsComplete(teams.map((team) => team.id), matches, tournament.aurardRounds)) {
+        return { error: "Terminez toutes les rondes avant de lancer le tableau final." };
+      }
+      const ranking = rankAurardTeams(
+        teams.map((team) => ({ id: team.id, registrationNumber: team.registrationNumber })),
+        matches,
+        tournament.format === "BELOTE" ? { pointsFor: 2000, pointsAgainst: 1000 } : { pointsFor: 13, pointsAgainst: 7 },
+      );
+      bracketSize = aurardQualifierCountForTournament({
+        teamCount: teams.length,
+        savedCount: tournament.aurardQualifierCount,
+        hasStarted: tournament.status !== "REGISTRATION",
+      });
+      qualifiers = ranking.slice(0, bracketSize).map((entry) => ({
+        id: entry.teamId,
+        registrationNumber: entry.registrationNumber,
+      }));
+    } else {
+      const pools = await tx.pool.findMany({ where: { tournamentId }, include: { teams: true, matches: true } });
+      if (pools.length === 0) return { error: "Le tirage des poules n'a pas encore été effectué." };
+      if (!pools.every((pool) => poolResultsComplete(pool.matches))) return { error: FINALS_WAIT_MESSAGE };
+      const registrationNumberById = new Map(pools.flatMap((p) => p.teams.map((t) => [t.id, t.registrationNumber] as const)));
+      const general = computeGeneralStandings(pools.map((p) => ({
+        letter: p.letter,
+        teams: p.teams.map((t) => ({ id: t.id, registrationNumber: t.registrationNumber })),
+        matches: p.matches.map((m) => ({ teamAId: m.teamAId, teamBId: m.teamBId, scoreA: m.scoreA, scoreB: m.scoreB })),
+      })));
+      bracketSize = bracketSizeForPoolCount(pools.length);
+      qualifiers = general.slice(0, bracketSize).map((e) => ({ id: e.teamId, registrationNumber: registrationNumberById.get(e.teamId) ?? 0 }));
+    }
 
-  const general = computeGeneralStandings(
-    pools.map((p) => ({
-      letter: p.letter,
-      teams: p.teams.map((t) => ({ id: t.id, registrationNumber: t.registrationNumber })),
-      matches: p.matches.map((m) => ({
-        teamAId: m.teamAId,
-        teamBId: m.teamBId,
-        scoreA: m.scoreA,
-        scoreB: m.scoreB,
-      })),
-    }))
-  );
+    const plan = buildBracket(qualifiers, bracketSize);
 
-  const bracketSize = bracketSizeForPoolCount(pools.length);
-  const qualifiers = general.slice(0, bracketSize).map((e) => ({
-    id: e.teamId,
-    registrationNumber: registrationNumberById.get(e.teamId) ?? 0,
-  }));
 
-  const plan = buildBracket(qualifiers, bracketSize);
-
-  await prisma.$transaction(async (tx) => {
     const idByRoundSlot = new Map<string, string>();
     const matchesByRound = new Map<BracketRoundName, string[]>();
 
@@ -118,81 +120,47 @@ export async function launchFinalsAction(
     }
 
     await tx.tournament.update({ where: { id: tournamentId }, data: { status: "FINALS" } });
+    return {};
   });
 
-  revalidatePath(`/tournaments/${tournamentId}/bracket`);
-  return {};
-}
-
-async function requireOwnedBracketMatch(tournamentId: string, matchId: string) {
-  const session = await auth();
-  if (!session?.user.id) notFound();
-
-  const match = await prisma.bracketMatch.findUnique({
-    where: { id: matchId },
-    include: { tournament: true },
-  });
-  if (!match || match.tournamentId !== tournamentId || match.tournament.ownerId !== session.user.id) {
-    notFound();
-  }
-
-  return match;
+  revalidatePath(`/tournaments/${tournamentId}`, "layout");
+  return result;
 }
 
 export async function saveBracketScoreAction(
   tournamentId: string,
   matchId: string,
-  formData: FormData
-) {
-  const match = await requireOwnedBracketMatch(tournamentId, matchId);
-  if (!match.teamAId || !match.teamBId) return; // pas encore les deux équipes
-
+  formData: FormData,
+): Promise<ScoreActionResult> {
   const rawA = formData.get("scoreA");
   const rawB = formData.get("scoreB");
   const scoreA = rawA === null || rawA === "" ? null : Number(rawA);
   const scoreB = rawB === null || rawB === "" ? null : Number(rawB);
+  if (!validScore(scoreA) || !validScore(scoreB)) return { error: "Saisissez des scores entiers positifs valides." };
 
-  if (
-    (scoreA !== null && (!Number.isInteger(scoreA) || scoreA < 0)) ||
-    (scoreB !== null && (!Number.isInteger(scoreB) || scoreB < 0))
-  ) {
-    return;
-  }
-
-  let status: "PENDING" | "DONE" | "TO_REPLAY" = "PENDING";
-  let winnerId: string | null = null;
-
-  if (scoreA !== null && scoreB !== null) {
-    if (scoreA > scoreB) {
-      status = "DONE";
-      winnerId = match.teamAId;
-    } else if (scoreB > scoreA) {
-      status = "DONE";
-      winnerId = match.teamBId;
-    } else {
-      status = "TO_REPLAY";
+  const result = await withOwnedTournament(tournamentId, async (tx): Promise<ScoreActionResult> => {
+    const matches = await tx.bracketMatch.findMany({ where: { tournamentId } });
+    const match = matches.find((item) => item.id === matchId);
+    if (!match) notFound();
+    if (!match.teamAId || !match.teamBId) return { error: "Les deux équipes doivent être connues." };
+    if (formData.get("expectedTeamAId") !== match.teamAId || formData.get("expectedTeamBId") !== match.teamBId) {
+      return { error: "Les équipes de cette rencontre ont changé. Rechargez la page avant de saisir le score." };
     }
-  }
-
-  await prisma.bracketMatch.update({
-    where: { id: matchId },
-    data: { scoreA, scoreB, status, winnerId },
+    const plan = planBracketScore(matches, matchId, scoreA, scoreB);
+    if (plan.resetsPlayedMatches && formData.get("confirmReset") !== "yes") return { confirmationRequired: true };
+    for (const changed of plan.changes) {
+      const { teamAId, teamBId, scoreA, scoreB, winnerId, status } = changed;
+      await tx.bracketMatch.update({ where: { id: changed.id }, data: { teamAId, teamBId, scoreA, scoreB, winnerId, status } });
+    }
+    const final = matches.find((item) => item.roundName === "FINAL");
+    const updatedFinal = plan.changes.find((item) => item.id === final?.id) ?? final;
+    await tx.tournament.update({ where: { id: tournamentId }, data: { status: updatedFinal?.winnerId ? "DONE" : "FINALS" } });
+    return {};
   });
-
-  if (winnerId) {
-    const nextAsA = await prisma.bracketMatch.findUnique({ where: { sourceMatchAId: matchId } });
-    if (nextAsA) {
-      await prisma.bracketMatch.update({ where: { id: nextAsA.id }, data: { teamAId: winnerId } });
-    }
-    const nextAsB = await prisma.bracketMatch.findUnique({ where: { sourceMatchBId: matchId } });
-    if (nextAsB) {
-      await prisma.bracketMatch.update({ where: { id: nextAsB.id }, data: { teamBId: winnerId } });
-    }
-
-    if (match.roundName === "FINAL") {
-      await prisma.tournament.update({ where: { id: tournamentId }, data: { status: "DONE" } });
-    }
+  if (!result.error && !result.confirmationRequired) {
+    revalidatePath(`/tournaments/${tournamentId}`, "layout");
+    revalidatePath(`/public/tournaments/${tournamentId}`);
+    revalidatePath("/dashboard");
   }
-
-  revalidatePath(`/tournaments/${tournamentId}/bracket`);
+  return result;
 }

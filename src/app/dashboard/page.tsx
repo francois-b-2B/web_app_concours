@@ -2,7 +2,8 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { ButtonLink, Button } from "@/components/ui/button";
 import { Card, Badge } from "@/components/ui/card";
-import { signOutAction } from "./actions";
+import { deleteTournamentAction, signOutAction } from "./actions";
+import { DeleteTournamentForm } from "./delete-tournament-form";
 
 const formatLabel: Record<string, string> = {
   BELOTE: "Belote",
@@ -12,10 +13,16 @@ const formatLabel: Record<string, string> = {
 const statusLabel: Record<string, string> = {
   REGISTRATION: "Inscriptions",
   DRAWN: "Poules tirées",
-  POOLS_IN_PROGRESS: "Poules en cours",
   FINALS: "Phase finale",
   DONE: "Terminé",
 };
+
+function tournamentStatusLabel(status: string, competitionMode: string) {
+  if (status === "POOLS_IN_PROGRESS") {
+    return competitionMode === "AURARD" ? "Rondes en cours" : "Poules en cours";
+  }
+  return statusLabel[status];
+}
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -53,7 +60,7 @@ export default async function DashboardPage() {
               <Card key={t.id} className="flex flex-col gap-3">
                 <div className="flex items-center justify-between">
                   <Badge>{formatLabel[t.format]}</Badge>
-                  <span className="text-[13px] text-muted">{statusLabel[t.status]}</span>
+                  <span className="text-[13px] text-muted">{tournamentStatusLabel(t.status, t.competitionMode)}</span>
                 </div>
                 <h2 className="text-xl font-semibold">{t.name}</h2>
                 <p className="text-[14px] text-muted">
@@ -61,9 +68,15 @@ export default async function DashboardPage() {
                   {t.location ? ` · ${t.location}` : ""}
                 </p>
                 <p className="text-[14px] text-muted">{t._count.teams} équipe(s) inscrite(s)</p>
-                <ButtonLink href={`/tournaments/${t.id}/teams`} className="mt-2">
-                  Ouvrir
-                </ButtonLink>
+                <div className="mt-2 flex flex-col gap-3 sm:flex-row">
+                  <ButtonLink href={`/tournaments/${t.id}/teams`} className="w-full flex-1">
+                    Ouvrir
+                  </ButtonLink>
+                  <DeleteTournamentForm
+                    tournamentName={t.name}
+                    action={deleteTournamentAction.bind(null, t.id)}
+                  />
+                </div>
               </Card>
             ))}
           </div>

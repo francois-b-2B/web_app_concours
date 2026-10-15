@@ -6,14 +6,16 @@ import type { LaunchFinalsState } from "./actions";
 
 export function LaunchFinalsButton({
   action,
+  disabled,
 }: {
+  disabled?: boolean;
   action: (prevState: LaunchFinalsState, formData: FormData) => Promise<LaunchFinalsState>;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
 
   return (
     <form action={formAction} className="flex flex-col items-center gap-3">
-      <Button type="submit" size="lg" disabled={pending}>
+      <Button type="submit" size="lg" disabled={pending || disabled}>
         {pending ? "Lancement…" : "Lancer la phase finale"}
       </Button>
       {state.error && <p className="text-[14px] text-danger text-center max-w-sm">{state.error}</p>}

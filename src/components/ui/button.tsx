@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { cn } from "@/lib/cn";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
+type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger" | "dangerOutline";
 type Size = "md" | "lg";
 
 const base =
@@ -15,6 +15,8 @@ const variants: Record<Variant, string> = {
   outline: "bg-background text-accent border border-accent hover:bg-accent/10",
   ghost: "bg-transparent text-accent hover:text-accent-hover",
   danger: "bg-danger text-white hover:brightness-110",
+  dangerOutline:
+    "bg-transparent text-muted border border-[#8a4848] hover:border-[#a85a5a] hover:bg-[#8a4848]/10 hover:text-foreground",
 };
 
 const sizes: Record<Size, string> = {

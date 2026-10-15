@@ -13,14 +13,14 @@ export async function loginAction(
 ): Promise<AuthActionState> {
   try {
     await signIn("credentials", {
-      email: formData.get("email"),
+      identifier: formData.get("identifier"),
       password: formData.get("password"),
       redirectTo: "/dashboard",
     });
     return {};
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: "Email ou mot de passe incorrect." };
+      return { error: "Identifiant ou mot de passe incorrect." };
     }
     throw error;
   }

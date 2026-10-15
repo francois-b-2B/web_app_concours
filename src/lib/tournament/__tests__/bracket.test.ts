@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { bracketSizeForPoolCount, standardSeeding, buildBracket } from "../bracket";
+import {
+  aurardBracketOverview,
+  aurardQualifierCountForTournament,
+  availableAurardQualifierCounts,
+  bracketSizeForAurardTeamCount,
+  bracketSizeForPoolCount,
+  standardSeeding,
+  buildBracket,
+} from "../bracket";
 
 function pairsOf(seeding: number[]) {
   const pairs: string[] = [];
@@ -10,15 +18,44 @@ function pairsOf(seeding: number[]) {
 }
 
 describe("bracketSizeForPoolCount", () => {
-  it("respecte le plancher de 8 et le plafond de 64", () => {
+  it("conserve huit places pour le tableau final, quel que soit le nombre de poules", () => {
     expect(bracketSizeForPoolCount(1)).toBe(8);
     expect(bracketSizeForPoolCount(4)).toBe(8);
-    expect(bracketSizeForPoolCount(5)).toBe(16);
-    expect(bracketSizeForPoolCount(8)).toBe(16);
-    expect(bracketSizeForPoolCount(9)).toBe(32);
-    expect(bracketSizeForPoolCount(16)).toBe(32);
-    expect(bracketSizeForPoolCount(17)).toBe(64);
-    expect(bracketSizeForPoolCount(100)).toBe(64);
+    expect(bracketSizeForPoolCount(16)).toBe(8);
+    expect(bracketSizeForPoolCount(100)).toBe(8);
+  });
+});
+
+describe("qualification Aurard", () => {
+  it.each([
+    [15, 4], [16, 8], [32, 8], [33, 16], [64, 16], [65, 32], [128, 32], [129, 64], [200, 64], [256, 64],
+  ] as const)("propose %i qualifiées pour %i inscrites", (teamCount, expected) => {
+    expect(bracketSizeForAurardTeamCount(teamCount)).toBe(expected);
+  });
+
+  it("n'offre que les tableaux strictement inférieurs aux inscriptions", () => {
+    expect(availableAurardQualifierCounts(8)).toEqual([4]);
+    expect(availableAurardQualifierCounts(9)).toEqual([4, 8]);
+    expect(availableAurardQualifierCounts(16)).toEqual([4, 8]);
+    expect(availableAurardQualifierCounts(17)).toEqual([4, 8, 16]);
+    expect(availableAurardQualifierCounts(64)).toEqual([4, 8, 16, 32]);
+    expect(availableAurardQualifierCounts(65)).toEqual([4, 8, 16, 32, 64]);
+  });
+
+  it("conserve la règle historique d'un concours déjà commencé sans choix enregistré", () => {
+    expect(aurardQualifierCountForTournament({ teamCount: 9, savedCount: null, hasStarted: true })).toBe(8);
+    expect(aurardQualifierCountForTournament({ teamCount: 15, savedCount: null, hasStarted: true })).toBe(8);
+    expect(aurardQualifierCountForTournament({ teamCount: 15, savedCount: null, hasStarted: false })).toBe(4);
+  });
+
+  it("conserve un choix manuel valide puis revient à la proposition s'il ne l'est plus", () => {
+    expect(aurardQualifierCountForTournament({ teamCount: 80, savedCount: 64, hasStarted: false })).toBe(64);
+    expect(aurardQualifierCountForTournament({ teamCount: 64, savedCount: 64, hasStarted: false })).toBe(16);
+  });
+
+  it("décrit les tableaux de 32 et 64 places", () => {
+    expect(aurardBracketOverview(32)).toEqual({ firstRound: "Seizièmes de finale", firstRoundMatches: 16, totalMatches: 31 });
+    expect(aurardBracketOverview(64)).toEqual({ firstRound: "Trente-deuxièmes de finale", firstRoundMatches: 32, totalMatches: 63 });
   });
 });
 
@@ -82,5 +119,21 @@ describe("buildBracket", () => {
     expect(bracket.filter((m) => m.roundName === "FINAL")).toHaveLength(1);
     // tableau complet -> aucun bye
     expect(bracket.filter((m) => m.isBye)).toHaveLength(0);
+  });
+
+  it.each([
+    [32, "R32", 16, 31],
+    [64, "R64", 32, 63],
+  ] as const)("construit le bon premier tour pour %i qualifiées", (size, firstRound, firstRoundMatches, totalMatches) => {
+    const ranked = Array.from({ length: size }, (_, i) => ({ id: `q${i + 1}`, registrationNumber: i + 1 }));
+    const bracket = buildBracket(ranked, size);
+    expect(bracket.filter((match) => match.roundName === firstRound)).toHaveLength(firstRoundMatches);
+    expect(bracket).toHaveLength(totalMatches);
+    const qualifiedIds = new Set(ranked.map((team) => team.id));
+    const firstRoundIds = new Set(bracket
+      .filter((match) => match.roundName === firstRound)
+      .flatMap((match) => [match.teamAId, match.teamBId])
+      .filter((id): id is string => id !== null));
+    expect(firstRoundIds).toEqual(qualifiedIds);
   });
 });
