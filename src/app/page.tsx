@@ -10,9 +10,9 @@ const features = [
       "Enregistrez jusqu'à 256 équipes par concours.",
   },
   {
-    title: "Poules ou rondes",
+    title: "Rondes ou poules",
     description:
-      "Choisissez les poules qualificatives ou les Rondes.",
+      "Choisissez les Rondes ou les poules qualificatives.",
   },
   {
     title: "Classement",
@@ -46,7 +46,7 @@ export default function Home() {
           Organisez votre concours.
         </h1>
         <p className="max-w-xl text-lg sm:text-xl text-muted">
-          Inscriptions, tirages, poules ou rondes, classement et tableau final.
+          Inscriptions, tirages, rondes ou poules, classement et tableau final.
           Tout est calculé, sauvegardé et mis à jour automatiquement.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
