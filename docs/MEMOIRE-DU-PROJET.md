@@ -1,6 +1,6 @@
 # Mémoire du projet Concours
 
-Dernière mise à jour : 10 octobre 2026
+Dernière mise à jour : 21 octobre 2026
 
 Ce document conserve les choix validés avec le propriétaire de l’application. Il doit être relu avant toute évolution importante et complété au fil des décisions.
 
@@ -15,6 +15,30 @@ Ce document conserve les choix validés avec le propriétaire de l’application
 - Les modifications sont d’abord réalisées et contrôlées en local. La mise en ligne est faite lorsque le propriétaire la demande.
 - La publication peut être effectuée directement par Vercel depuis le projet relié, sans dépendre de Git ni des outils développeur Xcode.
 - L’environnement macOS dispose actuellement d’environ 10 Go libres, alors que l’installation des outils développeur en demande environ 23,74 Go : ne pas la relancer sans avoir libéré suffisamment d’espace.
+
+## Synchronisation et mise en ligne
+
+Le dépôt de référence est le clone GitHub situé dans :
+`/Users/fb/Documents/GitHub/web_app_concours`.
+
+### Avant de commencer sur un Mac
+
+1. Ouvrir GitHub Desktop et sélectionner le dépôt `web_app_concours`.
+2. Cliquer sur **Fetch origin**, puis sur **Pull origin** pour récupérer les derniers changements.
+3. Vérifier que le travail se fait bien dans le clone GitHub ci-dessus, et non dans une ancienne copie locale.
+4. Ne jamais lire, copier, afficher ou publier `.env` ou `.env.local`.
+
+### Après une modification
+
+1. Contrôler l'application en local et vérifier les tests concernés.
+2. Dans GitHub Desktop, relire la liste des fichiers modifiés et retirer les fichiers temporaires ou les vidéos de test qui ne doivent pas être publiés.
+3. Saisir un message de commit explicite, puis cliquer sur **Commit**.
+4. Cliquer sur **Push origin**.
+
+Le projet Vercel `web-app-concours` est relié au dépôt GitHub. La branche de production actuelle est `claude/project-review-x5q6dp` : un push sur cette branche déclenche le déploiement Vercel. Après le push, vérifier dans Vercel que le déploiement est **Ready**, puis contrôler le site public :
+`https://web-app-concours.vercel.app/`.
+
+Pour travailler sur l'autre Mac, refaire simplement **Fetch origin**, puis **Pull origin** avant toute nouvelle modification. Les vidéos de test ne doivent pas être ajoutées au dépôt ni au déploiement.
 
 ## Belote et boules
 
@@ -42,6 +66,7 @@ Ce document conserve les choix validés avec le propriétaire de l’application
 ## Mode essai
 
 - Le mode essai reprend autant que possible l’esthétique, les rubriques et le contenu de l’application connectée.
+- Le formulaire d’inscription propose le choix **Boules** ou **Belote** avant le lancement du concours. Ce choix adapte les libellés, le barème des scores, le classement, les règles et l’aperçu de l’affiche.
 - Il permet de démontrer les **Poules qualificatives** et les **Rondes Aurard adaptées**, y compris le choix du nombre de rondes et de la taille du tableau final.
 - Il applique le même plafond de **256 équipes**, sans sauvegarder les données.
 - Les inscriptions comprennent les noms des deux joueurs, le statut du paiement et le contact facultatif.
