@@ -167,7 +167,7 @@ function workbookFor(tournament: TournamentExportData) {
       ["Lieu", tournament.location ?? ""],
       ["Type", sportLabel(tournament)],
       ["Composition", teamLabel(tournament)],
-      ["Format", tournament.competitionMode === "AURARD" ? "Rondes + tableau final" : "Poules + tableau final"],
+      ["Format", tournament.competitionMode === "AURARD" ? "Ronde + Tableau final (pour association), réduit le temps d’attente" : "Poules + Tableau final (concours officiel)"],
       ["Nombre d’équipes", tournament.teams.length],
       ["Équipes qualifiées", qualifiedCount],
       ["Nombre de poules", tournament.competitionMode === "AURARD" ? "—" : tournament.pools.length],

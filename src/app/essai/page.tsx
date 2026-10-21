@@ -9,6 +9,7 @@ import { Badge, Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input, Label, Select } from "@/components/ui/input";
 import { ScoreForm } from "@/components/tournament/score-form";
+import { ChampionCelebration } from "@/components/tournament/champion-celebration";
 import { FINALS_WAIT_MESSAGE, REGISTRATION_LOCK_MESSAGE, POOL_SCORE_LOCK_MESSAGE, planBracketScore, poolResultsComplete, validScore, scoreResult, type ScoreActionResult } from "@/lib/tournament/score-integrity";
 import { FreeGlassBadge } from "@/components/free-glass-badge";
 import {
@@ -22,7 +23,7 @@ import { computeGeneralStandings, rankPoolStandings } from "@/lib/tournament/sta
 import {
   aurardBracketOverview,
   aurardQualificationDescription,
-  availableAurardQualifierCounts,
+  AURARD_QUALIFIER_COUNTS,
   bracketSizeForAurardTeamCount,
   bracketSizeForPoolCount,
   buildBracket,
@@ -146,8 +147,12 @@ export default function TrialPage() {
   const [paymentStatus, setPaymentStatus] = useState<"PENDING" | "PAID">("PENDING");
   const [teams, setTeams] = useState<Team[]>([]);
   const [competitionMode, setCompetitionMode] = useState<TrialCompetitionMode>("AURARD");
-  const [aurardRounds, setAurardRounds] = useState(3);
+  const [aurardRounds, setAurardRounds] = useState(2);
+  const [aurardRoundsEditing, setAurardRoundsEditing] = useState(true);
+  const [aurardRoundsSaved, setAurardRoundsSaved] = useState(false);
   const [aurardQualifierCount, setAurardQualifierCount] = useState<AurardQualifierCount | null>(null);
+  const [aurardQualifierEditing, setAurardQualifierEditing] = useState(true);
+  const [aurardQualifierSaved, setAurardQualifierSaved] = useState(false);
   const [frozenAurardQualifierCount, setFrozenAurardQualifierCount] = useState<AurardQualifierCount | null>(null);
   const [aurardMatches, setAurardMatches] = useState<TrialAurardMatch[]>([]);
   const [pools, setPools] = useState<Pool[]>([]);
@@ -163,9 +168,7 @@ export default function TrialPage() {
   const nameOf = (id: string) => teams.find((team) => team.id === id)?.name ?? "Équipe inconnue";
   const competitionStarted = pools.length > 0 || aurardMatches.length > 0;
   const automaticAurardQualifierCount = bracketSizeForAurardTeamCount(teams.length);
-  const availableAurardCounts = availableAurardQualifierCounts(teams.length);
   const currentAurardQualifierCount = frozenAurardQualifierCount ?? aurardQualifierCount ?? automaticAurardQualifierCount;
-  const currentAurardOverview = aurardBracketOverview(currentAurardQualifierCount);
 
   useEffect(() => {
     let active = true;
@@ -265,6 +268,10 @@ export default function TrialPage() {
 
     try {
       if (competitionMode === "AURARD") {
+        if (!aurardRoundsSaved || !aurardQualifierSaved) {
+          setError("Enregistrez les deux réglages avant de lancer la première ronde.");
+          return;
+        }
         if (aurardQualifierCount !== null && aurardQualifierCount >= teams.length) {
           setError("Choisissez à nouveau la taille du tableau final.");
           return;
@@ -396,6 +403,8 @@ export default function TrialPage() {
     setTeams((current) => current.filter((team) => team.id !== teamId));
     if (aurardQualifierCount !== null && aurardQualifierCount >= nextCount) {
       setAurardQualifierCount(null);
+      setAurardQualifierSaved(false);
+      setAurardQualifierEditing(true);
       setError("Le précédent choix de tableau n’est plus possible. Choisissez à nouveau.");
     }
   }
@@ -414,28 +423,48 @@ export default function TrialPage() {
     setEditingTeamId(null);
   }
 
+  function aurardPreparationContent() {
+    if (competitionMode !== "AURARD") return null;
+    if (competitionStarted) {
+      return <p className="text-center text-[15px] font-semibold text-accent">Réglages verrouillés : {aurardRounds} parties · {currentAurardQualifierCount} équipes qualifiées</p>;
+    }
+    const hasAvailableQualifier = AURARD_QUALIFIER_COUNTS.some((count) => count < teams.length);
+    const settingsSaved = aurardRoundsSaved && aurardQualifierSaved;
+    const editButtonClass = "rounded-pill border border-accent bg-transparent px-5 py-3 font-semibold text-accent transition-colors hover:bg-accent/10 disabled:pointer-events-none disabled:opacity-40";
+    const saveButtonClass = "rounded-pill bg-accent px-5 py-3 font-semibold text-white transition-colors hover:bg-accent/90 disabled:pointer-events-none disabled:opacity-40";
+    return <Card className="flex flex-col gap-5">
+      <div><h2 className="text-xl font-semibold">Préparer les rondes</h2></div>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <label className="flex flex-1 flex-col gap-2 text-[14px] font-medium"><select aria-label="Nombre de parties" value={aurardRounds} disabled={competitionStarted || !aurardRoundsEditing} onChange={(event) => { setAurardRounds(Number(event.target.value)); setAurardRoundsSaved(false); setAurardRoundsEditing(true); }} className="rounded-pill border border-border bg-surface-2 px-4 py-3 text-foreground disabled:opacity-50"><option value={2}>2 parties</option><option value={3}>3 parties</option><option value={4}>4 parties</option></select></label>
+        <Button type="button" disabled={competitionStarted} className={aurardRoundsEditing ? saveButtonClass : editButtonClass} onClick={() => { if (aurardRoundsEditing) { setAurardRoundsSaved(true); setAurardRoundsEditing(false); } else setAurardRoundsEditing(true); }}>{aurardRoundsEditing ? "Enregistrer" : "Modifier"}</Button>
+      </div>
+      {competitionStarted && <p className="text-[14px] text-muted">Le réglage est verrouillé car le concours a commencé.</p>}
+      <div className="border-t border-border pt-5"><h2 className="text-xl font-semibold">Préparer le tableau final</h2><div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-end">
+        <label className="flex flex-1 flex-col gap-2 text-[14px] font-medium">Équipes qualifiées · Modifiable tant que les inscriptions sont ouvertes<select aria-label="Équipes qualifiées" value={currentAurardQualifierCount} disabled={competitionStarted || !aurardQualifierEditing || !hasAvailableQualifier} onChange={(event) => { setAurardQualifierCount(Number(event.target.value) as AurardQualifierCount); setAurardQualifierSaved(false); setAurardQualifierEditing(true); }} className="rounded-pill border border-border bg-surface-2 px-4 py-3 text-foreground disabled:opacity-50">{AURARD_QUALIFIER_COUNTS.map((count) => { const overview = aurardBracketOverview(count); return <option key={count} value={count} disabled={count >= teams.length}>{count} équipes · {overview.firstRound}</option>; })}</select></label>
+        <Button type="button" disabled={competitionStarted || !hasAvailableQualifier} className={aurardQualifierEditing ? saveButtonClass : editButtonClass} onClick={() => { if (aurardQualifierEditing) { setAurardQualifierCount(currentAurardQualifierCount); setAurardQualifierSaved(true); setAurardQualifierEditing(false); } else setAurardQualifierEditing(true); }}>{aurardQualifierEditing ? "Enregistrer" : "Modifier"}</Button>
+      </div></div>
+      <p className={`flex min-h-10 items-center justify-center text-center text-[13px] ${settingsSaved ? "text-success" : "text-danger"}`}>{settingsSaved ? "Réglage enregistré." : "Réglage non enregistré."}</p>
+    </Card>;
+  }
+
   function teamsContent() {
     return <div className="flex flex-col gap-8">
-      <div className="section-heading-with-badge relative min-h-28 pr-32"><FreeGlassBadge withBeams /><h1 className="text-3xl font-bold">Inscriptions</h1><p className="mt-1 text-[15px] text-muted">{teams.length} / 256 équipes · {paidCount} réglée(s)</p></div>
+      <div className="section-heading-with-badge relative min-h-28 pr-32"><FreeGlassBadge withBeams /><h1 className="text-3xl font-bold">Inscriptions</h1>{competitionMode === "AURARD" && <Badge className="mt-2 w-fit border-accent/60 text-accent">Ronde + Tableau final (pour association), réduit le temps d’attente</Badge>}</div>
       <Card className="flex flex-col gap-4">
         <div className="flex flex-col gap-2"><Label htmlFor="trial-title">Nom du concours</Label><Input id="trial-title" value={title} onChange={(event) => setTitle(event.target.value)} maxLength={80} /></div>
-        <label className="flex max-w-md flex-col gap-2 text-[14px] font-medium">Formule du concours<Select value={competitionMode} disabled={competitionStarted} onChange={(event) => { setCompetitionMode(event.target.value as TrialCompetitionMode); setError(""); }}><option value="POOLS">Poules qualificatives</option><option value="AURARD">Rondes</option></Select></label>
-        {competitionMode === "AURARD" && <div className="grid gap-4 border-t border-border pt-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-2 text-[14px] font-medium">Nombre de rondes<Select value={aurardRounds} disabled={competitionStarted} onChange={(event) => setAurardRounds(Number(event.target.value))}><option value={2}>2 rondes</option><option value={3}>3 rondes</option><option value={4}>4 rondes</option></Select></label>
-          <label className="flex flex-col gap-2 text-[14px] font-medium">Équipes qualifiées<Select value={currentAurardQualifierCount} disabled={competitionStarted || availableAurardCounts.length === 0} onChange={(event) => setAurardQualifierCount(Number(event.target.value) as AurardQualifierCount)}>{availableAurardCounts.map((count) => { const overview = aurardBracketOverview(count); return <option key={count} value={count}>{count} · {overview.firstRound}</option>; })}</Select></label>
-          <div className="sm:col-span-2 text-[14px] text-muted"><p>{aurardQualifierCount === null ? `Proposition automatique : ${automaticAurardQualifierCount} qualifiées.` : `Choix manuel : ${aurardQualifierCount} qualifiées.`}</p><p className="mt-1">Le tableau commencera par les {currentAurardOverview.firstRound.toLowerCase()}. Ce choix reste modifiable tant que les inscriptions sont ouvertes.</p></div>
-        </div>}
-        <form onSubmit={addTeam} className="flex flex-col items-start gap-3 sm:flex-row"><fieldset disabled={competitionStarted} className="contents"><Input value={first} onChange={(event) => setFirst(event.target.value)} placeholder="Joueur 1" aria-label="Joueur 1" className="sm:flex-1" /><Input value={second} onChange={(event) => setSecond(event.target.value)} placeholder="Joueur 2" aria-label="Joueur 2" className="sm:flex-1" /><Select value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value as "PENDING" | "PAID")} aria-label="Statut du paiement" className="sm:w-40"><option value="PENDING">En attente</option><option value="PAID">Réglée</option></Select><Input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Contact (optionnel)" aria-label="Contact" className="sm:flex-1" /><Button type="submit" className="whitespace-nowrap">Ajouter</Button></fieldset></form>
+        <label className="flex max-w-md flex-col gap-2 text-[14px] font-medium">Formule du concours · Modifiable plus tard<Select value={competitionMode} disabled={competitionStarted} onChange={(event) => { setCompetitionMode(event.target.value as TrialCompetitionMode); setError(""); }}>{<><option value="POOLS">Poules + Tableau final (concours officiel)</option><option value="AURARD">Ronde + Tableau final (pour association), réduit le temps d’attente</option></>}</Select></label>
+        <form onSubmit={addTeam} className="flex flex-col items-start gap-3 sm:flex-row"><fieldset disabled={competitionStarted} className="contents"><Input value={first} onChange={(event) => setFirst(event.target.value)} placeholder="Joueur 1" aria-label="Joueur 1" className="sm:flex-1" /><Input value={second} onChange={(event) => setSecond(event.target.value)} placeholder="Joueur 2" aria-label="Joueur 2" className="sm:flex-1" /><Select value={paymentStatus} onChange={(event) => setPaymentStatus(event.target.value as "PENDING" | "PAID")} aria-label="Statut du paiement" className="sm:w-40"><option value="PENDING">En attente</option><option value="PAID">Réglée</option></Select><Input value={contact} onChange={(event) => setContact(event.target.value)} placeholder="Tél. (facultatif)" aria-label="Tél." className="sm:flex-1" /><Button type="submit" className="whitespace-nowrap">Ajouter</Button></fieldset></form>
         <Button type="button" variant="secondary" onClick={addExamples} disabled={competitionStarted} className="self-start">Ajouter 10 équipes d’exemple</Button>
         {competitionStarted && <p className="text-sm text-muted">{REGISTRATION_LOCK_MESSAGE}</p>}
         {error && <p className="text-[14px] text-danger" role="alert">{error}</p>}
       </Card>
-      <div className="flex flex-col gap-2">{teams.map((team) => <Card key={team.id} className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="flex items-center gap-4"><span className="w-8 text-[14px] text-muted">#{team.registrationNumber}</span><div><p className="font-medium">{team.name}</p>{team.contact && <p className="text-[13px] text-muted">{team.contact}</p>}</div></div><div className="flex items-center gap-3"><button type="button" onClick={() => togglePayment(team.id)}><Badge className={team.paymentStatus === "PAID" ? "border-success/50 text-success" : "border-white/20 text-muted"}>{team.paymentStatus === "PAID" ? "Réglée" : "En attente"}</Badge></button><TrialRemoveButton teamName={team.name} disabled={competitionStarted} onRemove={() => removeTeam(team.id)} /><Button type="button" variant="ghost" size="md" onClick={() => setEditingTeamId(team.id)}>Modifier</Button></div>{editingTeamId === team.id && <form onSubmit={(event) => saveTeam(event, team.id)} className="basis-full flex flex-col gap-3 pt-3 sm:flex-row"><Input name="player1" defaultValue={team.player1} aria-label="Joueur 1" required /><Input name="player2" defaultValue={team.player2} aria-label="Joueur 2" required /><Input name="contact" defaultValue={team.contact} placeholder="Contact (optionnel)" aria-label="Contact" /><div className="flex gap-2"><Button type="submit" size="md">Enregistrer</Button><Button type="button" variant="secondary" size="md" onClick={() => setEditingTeamId(null)}>Annuler</Button></div></form>}</Card>)}{teams.length === 0 && <p className="py-8 text-center text-muted">Aucune équipe inscrite pour l’instant.</p>}</div>
+      <p className="text-[15px] text-muted"><strong className="font-semibold text-accent">{teams.length}</strong> / 256 équipes max · <strong className="font-semibold text-accent">{paidCount}</strong> réglée(s)</p>
+      <div className="flex flex-col gap-2">{teams.map((team) => <Card key={team.id} className="flex flex-wrap items-center justify-between gap-4 py-4"><div className="flex items-center gap-4"><span className="w-8 text-[14px] text-muted">#{team.registrationNumber}</span><div><p className="font-medium">{team.name}</p>{team.contact && <p className="text-[13px] text-muted">{team.contact}</p>}</div></div><div className="flex items-center gap-3"><button type="button" onClick={() => togglePayment(team.id)}><Badge className={team.paymentStatus === "PAID" ? "border-success/50 text-success" : "border-white/20 text-muted"}>{team.paymentStatus === "PAID" ? "Réglée" : "En attente"}</Badge></button><TrialRemoveButton teamName={team.name} disabled={competitionStarted} onRemove={() => removeTeam(team.id)} /><Button type="button" variant="ghost" size="md" onClick={() => setEditingTeamId(team.id)}>Modifier</Button></div>{editingTeamId === team.id && <form onSubmit={(event) => saveTeam(event, team.id)} className="basis-full flex flex-col gap-3 pt-3 sm:flex-row"><Input name="player1" defaultValue={team.player1} aria-label="Joueur 1" required /><Input name="player2" defaultValue={team.player2} aria-label="Joueur 2" required /><Input name="contact" defaultValue={team.contact} placeholder="Tél. (facultatif)" aria-label="Tél." /><div className="flex gap-2"><Button type="submit" size="md">Enregistrer</Button><Button type="button" variant="secondary" size="md" onClick={() => setEditingTeamId(null)}>Annuler</Button></div></form>}</Card>)}{teams.length === 0 && <p className="py-8 text-center text-muted">Aucune équipe inscrite pour l’instant.</p>}</div>
     </div>;
   }
 
   function drawContent() {
-    return <Card className="flex flex-col gap-5"><div><h2 className="text-xl font-semibold">{competitionMode === "AURARD" ? "Tirage des rondes" : "Tirage des poules"}</h2><p className="mt-1 text-[14px] text-muted">{drawHelp}</p></div><p className="text-[15px] text-muted">{competitionMode === "AURARD" ? "Le tirage crée une première ronde et évite ensuite les rencontres déjà jouées autant que possible." : "Le tirage mélange les équipes et crée les feuilles de match."}</p>{error && <p className="text-[14px] text-danger">{error}</p>}<div className="flex flex-wrap gap-3"><Button type="button" onClick={draw} disabled={competitionStarted || teams.length < MIN_TEAMS_TO_DRAW}>{competitionStarted ? "Tirage effectué" : competitionMode === "AURARD" ? "Lancer la première ronde" : "Tirer les poules"}</Button><Button type="button" variant="ghost" onClick={() => setActiveTab("teams")}>Modifier les inscriptions</Button></div></Card>;
+    return <div className="flex flex-col gap-5">{aurardPreparationContent()}<Card className="flex flex-col gap-5"><div><h2 className="text-xl font-semibold">{competitionMode === "AURARD" ? "Tirage des rondes" : "Tirage des poules"}</h2><p className="mt-1 text-[14px] text-muted">{drawHelp}</p></div><p className="text-[15px] text-muted">{competitionMode === "AURARD" ? "Le tirage crée une première ronde et évite ensuite les rencontres déjà jouées autant que possible." : "Le tirage mélange les équipes et crée les feuilles de match."}</p>{error && <p className="text-[14px] text-danger">{error}</p>}<div className="flex flex-wrap gap-3"><Button type="button" onClick={draw} disabled={competitionStarted || teams.length < MIN_TEAMS_TO_DRAW}>{competitionStarted ? "Tirage effectué" : competitionMode === "AURARD" ? "Lancer la première ronde" : "Tirer les poules"}</Button><Button type="button" variant="ghost" onClick={() => setActiveTab("teams")}>Modifier les inscriptions</Button></div></Card></div>;
   }
 
   function aurardContent() {
@@ -482,7 +511,7 @@ export default function TrialPage() {
     const order: BracketRoundName[] = ["R64", "R32", "R16", "QF", "SF", "FINAL"];
     const rounds = order.filter((round) => bracketMatches.some((match) => match.roundName === round));
     const champion = bracketMatches.find((match) => match.roundName === "FINAL" && match.winnerId)?.winnerId ?? null;
-    return <div className="mx-auto flex max-w-5xl flex-col gap-10"><h1 className="text-3xl font-bold">Tableau final</h1>{champion && <Card className="border-accent/50 py-8 text-center"><p className="mb-1 text-[14px] text-muted">Champion du concours</p><p className="text-2xl font-bold">{nameOf(champion)}</p></Card>}<div className="grid auto-cols-[minmax(260px,1fr)] grid-flow-col items-stretch gap-6 overflow-x-auto pb-4">{rounds.map((round) => <div key={round} className="grid min-w-[260px] grid-rows-[auto_1fr] gap-4"><h2 className="text-[14px] font-semibold uppercase tracking-wide text-muted">{labels[round]}</h2><div className="flex flex-col justify-around gap-4">{bracketMatches.filter((match) => match.roundName === round).sort((a, b) => a.slotIndex - b.slotIndex).map((match) => <Card key={match.id} className="flex flex-col gap-3"><Badge className="self-start">Table {match.tableNumber}</Badge>{match.isBye ? <p className="text-[14px] text-muted">{nameOf(match.teamAId ?? match.teamBId ?? "")} qualifié(e) d’office (bye)</p> : <TrialScoreForm key={`${match.id}:${match.scoreA}:${match.scoreB}:${match.teamAId}:${match.teamBId}`} teamALabel={match.teamAId ? nameOf(match.teamAId) : "En attente"} teamBLabel={match.teamBId ? nameOf(match.teamBId) : "En attente"} initialScoreA={match.scoreA} initialScoreB={match.scoreB} disabled={!match.teamAId || !match.teamBId} onSave={(scoreA, scoreB, confirmed) => saveBracketScore(match.id, scoreA, scoreB, confirmed)} />}</Card>)}</div></div>)}</div></div>;
+    return <div className="mx-auto flex max-w-5xl flex-col gap-10"><h1 className="text-3xl font-bold">Tableau final</h1>{champion && <><ChampionCelebration /><Card id="champion-card" className="champion-reveal border-accent/50 py-8 text-center"><p className="mb-1 text-[14px] text-accent">Champion du concours</p><p className="text-2xl font-bold text-[#30d158]">{nameOf(champion)}</p></Card></>}<div className="grid auto-cols-[minmax(260px,1fr)] grid-flow-col items-stretch gap-6 overflow-x-auto pb-4">{rounds.map((round) => <div key={round} className="grid min-w-[260px] grid-rows-[auto_1fr] gap-4"><h2 className="text-[14px] font-semibold uppercase tracking-wide text-muted">{labels[round]}</h2><div className="flex flex-col justify-around gap-4">{bracketMatches.filter((match) => match.roundName === round).sort((a, b) => a.slotIndex - b.slotIndex).map((match) => <Card key={match.id} className="flex flex-col gap-3"><Badge className="self-start">Table {match.tableNumber}</Badge>{match.isBye ? <p className="text-[14px] text-muted">{nameOf(match.teamAId ?? match.teamBId ?? "")} qualifié(e) d’office (bye)</p> : <TrialScoreForm key={`${match.id}:${match.scoreA}:${match.scoreB}:${match.teamAId}:${match.teamBId}`} teamALabel={match.teamAId ? nameOf(match.teamAId) : "En attente"} teamBLabel={match.teamBId ? nameOf(match.teamBId) : "En attente"} initialScoreA={match.scoreA} initialScoreB={match.scoreB} disabled={!match.teamAId || !match.teamBId} onSave={(scoreA, scoreB, confirmed) => saveBracketScore(match.id, scoreA, scoreB, confirmed)} />}</Card>)}</div></div>)}</div></div>;
   }
 
   function exportContent() {

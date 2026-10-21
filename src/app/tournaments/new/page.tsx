@@ -61,10 +61,10 @@ export default function NewTournamentPage() {
           )}
 
           <div className="flex flex-col gap-1.5">
-            <Label htmlFor="competitionMode">Format du concours</Label>
+            <Label htmlFor="competitionMode">Format du concours · Modifiable plus tard</Label>
             <Select id="competitionMode" name="competitionMode" defaultValue="AURARD">
-              <option value="AURARD">Rondes + tableau final (recommandé)</option>
-              <option value="POOLS">Poules qualificatives + tableau final</option>
+              <option value="AURARD">Ronde + Tableau final (pour association), réduit le temps d’attente</option>
+              <option value="POOLS">Poules + Tableau final (concours officiel)</option>
             </Select>
             <div className="mt-2 flex flex-col gap-2 text-[13px] leading-relaxed text-muted">
               <p>

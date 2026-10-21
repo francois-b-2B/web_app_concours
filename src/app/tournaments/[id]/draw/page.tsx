@@ -11,14 +11,18 @@ import {
   bracketSizeForPoolCount,
   aurardQualificationDescription,
   aurardQualifierCountForTournament,
+  AURARD_QUALIFIER_COUNTS,
+  bracketSizeForAurardTeamCount,
   getDrawMinimumTeamMessage,
+  isAurardQualifierCount,
   playingAreaLabel,
   rankAurardTeams,
   aurardRoundsComplete,
   visibleAurardMatches,
 } from "@/lib/tournament";
 import { drawAurardAction, drawPoolsAction, saveAurardScoreAction, startNextAurardRoundAction } from "./actions";
-import { saveAurardRoundsAction } from "../teams/actions";
+import { saveAurardQualifierCountAction, saveAurardRoundsAction } from "../teams/actions";
+import { AurardQualifiersForm } from "../teams/aurard-qualifiers-form";
 import { AurardRoundsForm } from "../teams/aurard-rounds-form";
 import { DrawButton } from "./draw-button";
 
@@ -47,6 +51,51 @@ export default async function DrawPage({ params }: { params: Promise<{ id: strin
     savedCount: tournament.aurardQualifierCount,
     hasStarted: tournament.status !== "REGISTRATION",
   });
+  const selectedQualifierCount = (
+    tournament.aurardQualifierCount !== null &&
+    tournament.aurardQualifierCount < teamCount &&
+    isAurardQualifierCount(tournament.aurardQualifierCount)
+  ) ? tournament.aurardQualifierCount : null;
+  const settingsAreSaved = tournament.aurardRounds !== null &&
+    tournament.aurardQualifierCount !== null &&
+    !tournament.aurardQualifierChoiceRequired;
+  const aurardPreparationCard = tournament.competitionMode === "AURARD" ? (
+    <Card className="w-full flex flex-col gap-4">
+      <div>
+        <h2 className="text-xl font-semibold">Préparer les rondes</h2>
+      </div>
+      <AurardRoundsForm
+        action={saveAurardRoundsAction.bind(null, tournament.id)}
+        rounds={tournament.aurardRounds}
+        disabled={tournament.status !== "REGISTRATION"}
+      />
+      {tournament.status !== "REGISTRATION" && (
+        <p className="text-[13px] text-muted">Le réglage est verrouillé car le concours a commencé.</p>
+      )}
+      <div className="border-t border-border pt-4">
+        <h3 className="text-[17px] font-semibold">Préparer le tableau final</h3>
+        <div className="mt-3">
+          <AurardQualifiersForm
+            action={saveAurardQualifierCountAction.bind(null, tournament.id)}
+            automaticCount={bracketSizeForAurardTeamCount(teamCount)}
+            selectedCount={selectedQualifierCount}
+            choiceRequired={tournament.aurardQualifierChoiceRequired}
+            options={AURARD_QUALIFIER_COUNTS}
+            teamCount={teamCount}
+            disabled={tournament.status !== "REGISTRATION"}
+          />
+        </div>
+        <p className={`flex min-h-10 items-center justify-center text-center text-[13px] ${settingsAreSaved ? "text-success" : "text-danger"}`}>
+          {settingsAreSaved ? "Réglage enregistré." : "Réglage non enregistré."}
+        </p>
+      </div>
+    </Card>
+  ) : null;
+  const aurardLockedSummary = tournament.competitionMode === "AURARD" ? (
+    <p className="text-center text-[15px] font-semibold text-accent">
+      Réglages verrouillés : {tournament.aurardRounds ?? 2} parties · {aurardQualifierCount} équipes qualifiées
+    </p>
+  ) : null;
 
   if (tournament.competitionMode === "AURARD") {
     const scoreLabel = tournament.format === "BELOTE" ? "2 000 à 1 000" : "13 à 7";
@@ -79,6 +128,7 @@ export default async function DrawPage({ params }: { params: Promise<{ id: strin
       return (
         <main className="flex-1 px-6 py-10">
           <div className="max-w-3xl mx-auto flex flex-col gap-8">
+            {aurardLockedSummary}
             <div className="text-center">
               <h1 className="text-3xl font-bold">Ronde {currentRound}</h1>
               <p className="text-muted mt-2">
@@ -211,6 +261,7 @@ export default async function DrawPage({ params }: { params: Promise<{ id: strin
     return (
       <main className="flex-1 px-6 py-10">
         <div className="max-w-2xl mx-auto flex flex-col gap-8 items-center text-center">
+          {aurardPreparationCard}
           <div>
             <h1 className="text-3xl font-bold">Rondes</h1>
             <p className="text-muted mt-2">{teamCount} équipe(s) inscrite(s).</p>
@@ -222,12 +273,6 @@ export default async function DrawPage({ params }: { params: Promise<{ id: strin
             <p className="text-[15px] text-muted">
               En cas de nombre impair, une équipe reçoit une victoire d’office ({scoreLabel}). Une même équipe ne peut pas être dispensée deux fois.
             </p>
-            <div className="mt-2">
-              <AurardRoundsForm
-                action={saveAurardRoundsAction.bind(null, id)}
-                rounds={tournament.aurardRounds}
-              />
-            </div>
           </Card>
           {aurardMinimumTeamsMessage && <p className="text-sm text-danger">{aurardMinimumTeamsMessage}</p>}
           <DrawButton

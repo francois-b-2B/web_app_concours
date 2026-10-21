@@ -10,6 +10,7 @@ import type { BracketRoundName } from "@/lib/tournament";
 import { aurardQualificationDescription, aurardQualifierCountForTournament, aurardRoundsComplete, playingAreaLabel } from "@/lib/tournament";
 import { launchFinalsAction, saveBracketScoreAction } from "./actions";
 import { LaunchFinalsButton } from "./launch-button";
+import { ChampionCelebration } from "@/components/tournament/champion-celebration";
 
 const ROUND_LABELS: Record<BracketRoundName, string> = {
   R64: "32èmes de finale",
@@ -96,12 +97,15 @@ export default async function BracketPage({ params }: { params: Promise<{ id: st
         <h1 className="text-3xl font-bold">Tableau final</h1>
 
         {champion && (
-          <Card className="text-center py-8 border-accent/50">
-            <p className="text-[14px] text-muted mb-1">Champion du concours</p>
-            <p className="text-2xl font-bold">
+          <>
+            <ChampionCelebration />
+            <Card id="champion-card" className="champion-reveal text-center py-8 border-accent/50">
+            <p className="text-[14px] text-accent mb-1">Champion du concours</p>
+            <p className="text-2xl font-bold text-[#30d158]">
               {champion.player1} et {champion.player2}
             </p>
-          </Card>
+            </Card>
+          </>
         )}
 
         <div className="grid grid-flow-col auto-cols-[minmax(260px,1fr)] items-stretch gap-6 overflow-x-auto pb-4">

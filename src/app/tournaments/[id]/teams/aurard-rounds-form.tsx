@@ -13,7 +13,7 @@ export function AurardRoundsForm({
   disabled?: boolean;
 }) {
   const [isEditing, setIsEditing] = useState(rounds === null);
-  const [selectedRounds, setSelectedRounds] = useState(String(rounds ?? 3));
+  const [selectedRounds, setSelectedRounds] = useState(String(rounds ?? 2));
   const [state, formAction, pending] = useActionState(
     async (_previous: AurardRoundsState, formData: FormData) => {
       const result = await action(formData);
@@ -29,11 +29,13 @@ export function AurardRoundsForm({
   return (
     <form action={formAction} className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <label className="flex flex-1 flex-col gap-2 text-[14px] font-medium">
-        Nombre de parties
         <select
           name="aurardRounds"
+          aria-label="Nombre de parties"
           value={selectedRounds}
-          onChange={(event) => setSelectedRounds(event.target.value)}
+          onChange={(event) => {
+            setSelectedRounds(event.target.value);
+          }}
           disabled={disabled || pending || !isEditing}
           className="rounded-pill border border-border bg-surface-2 px-4 py-3 text-foreground outline-none disabled:opacity-50"
         >

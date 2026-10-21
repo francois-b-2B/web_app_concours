@@ -31,6 +31,15 @@ export default function Home() {
         <span className="hero-liquid-ribbon hero-liquid-ribbon-two" aria-hidden="true" />
         <Image
           aria-hidden="true"
+          className="hero-chrome-ball"
+          src="/images/futuristic-chrome-sphere.png"
+          alt=""
+          width={1254}
+          height={1254}
+          sizes="192px"
+        />
+        <Image
+          aria-hidden="true"
           className="hero-jack-card"
           src="/images/valet-de-coeur.png"
           alt=""
@@ -47,7 +56,7 @@ export default function Home() {
         </h1>
         <p className="max-w-xl text-lg sm:text-xl text-muted">
           Inscriptions, tirages, rondes ou poules, classement et tableau final.
-          Tout est calculé, sauvegardé et mis à jour automatiquement.
+          Tout est calculé, sauvegardé et mis à jour automatiquement. Tous les joueurs peuvent consulter les résultats en temps réel sur leur téléphone.
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6 mt-2">
           <ButtonLink href="/register" size="lg">

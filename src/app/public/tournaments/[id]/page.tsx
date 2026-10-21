@@ -3,6 +3,7 @@ import { Badge, Card } from "@/components/ui/card";
 import { prisma } from "@/lib/prisma";
 import { aurardQualifierCountForTournament, aurardRoundsComplete, computeGeneralStandings, playingAreaLabel, rankAurardTeams, rankPoolStandings, visibleAurardMatches } from "@/lib/tournament";
 import { AutoRefresh } from "./auto-refresh";
+import { ChampionCelebration } from "@/components/tournament/champion-celebration";
 
 export const dynamic = "force-dynamic";
 
@@ -124,10 +125,13 @@ export default async function PublicTournamentPage({ params }: { params: Promise
         </nav>
 
         {champion && (
-          <Card className="text-center border-accent/50 py-7">
-            <p className="text-sm text-muted">Champion du concours</p>
-            <p className="mt-1 text-2xl font-bold">{teamName(champion)}</p>
-          </Card>
+          <>
+            <ChampionCelebration />
+            <Card id="champion-card" className="champion-reveal text-center border-accent/50 py-7">
+            <p className="text-sm text-accent">Champion du concours</p>
+            <p className="mt-1 text-2xl font-bold text-[#30d158]">{teamName(champion)}</p>
+            </Card>
+          </>
         )}
 
         <section id="inscriptions" className="scroll-mt-24 flex flex-col gap-5">

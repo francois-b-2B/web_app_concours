@@ -2,15 +2,12 @@ import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, Badge } from "@/components/ui/card";
-import { addTeamAction, deleteTeamAction, saveAurardQualifierCountAction, saveAurardRoundsAction, togglePaymentAction, updateTeamAction } from "./actions";
+import { addTeamAction, deleteTeamAction, togglePaymentAction, updateTeamAction } from "./actions";
 import { AddTeamForm } from "./add-team-form";
-import { AurardQualifiersForm } from "./aurard-qualifiers-form";
-import { AurardRoundsForm } from "./aurard-rounds-form";
 import { EditTeamForm } from "./edit-team-form";
 import { RemoveTeamForm } from "./remove-team-form";
 import { REGISTRATION_LOCK_MESSAGE } from "@/lib/tournament/score-integrity";
 import { FreeGlassBadge } from "@/components/free-glass-badge";
-import { availableAurardQualifierCounts, bracketSizeForAurardTeamCount, isAurardQualifierCount } from "@/lib/tournament";
 
 export default async function TeamsPage({
   params,
@@ -28,12 +25,6 @@ export default async function TeamsPage({
   if (!tournament || tournament.ownerId !== session.user.id) notFound();
 
   const paidCount = tournament.teams.filter((t) => t.paymentStatus === "PAID").length;
-  const teamCount = tournament.teams.length;
-  const selectedQualifierCount = (
-    tournament.aurardQualifierCount !== null &&
-    tournament.aurardQualifierCount < teamCount &&
-    isAurardQualifierCount(tournament.aurardQualifierCount)
-  ) ? tournament.aurardQualifierCount : null;
   const registrationLocked = tournament._count.pools > 0 || tournament._count.aurardMatches > 0;
 
   return (
@@ -42,50 +33,12 @@ export default async function TeamsPage({
         <div className="section-heading-with-badge relative min-h-28 pr-32">
           <FreeGlassBadge withBeams />
           <h1 className="text-3xl font-bold">Inscriptions</h1>
-          <p className="text-[15px] text-muted mt-1">
-            {tournament.teams.length} / {tournament.maxTeams} équipes · {paidCount} réglée(s)
-          </p>
           {tournament.competitionMode === "AURARD" && (
-            <Badge className="mt-3 border-accent/50 text-accent">Rondes + tableau final</Badge>
+            <Badge className="mt-3 border-accent/50 text-accent">Ronde + Tableau final (pour association), réduit le temps d’attente</Badge>
           )}
         </div>
 
-        {tournament.competitionMode === "AURARD" && (
-          <Card className="flex flex-col gap-4">
-            <div>
-              <h2 className="text-xl font-semibold">Préparer les rondes</h2>
-              <p className="mt-1 text-[14px] text-muted">
-                Choisis le nombre de parties avant de lancer la première ronde.
-              </p>
-            </div>
-            <AurardRoundsForm
-              action={saveAurardRoundsAction.bind(null, tournament.id)}
-              rounds={tournament.aurardRounds}
-              disabled={tournament.status !== "REGISTRATION"}
-            />
-            {tournament.status !== "REGISTRATION" && (
-              <p className="text-[13px] text-muted">Le réglage est verrouillé car le concours a commencé.</p>
-            )}
-            <div className="border-t border-border pt-4">
-              <h3 className="text-[17px] font-semibold">Préparer le tableau final</h3>
-              <p className="mt-1 text-[14px] text-muted">
-                Choisis les équipes qui rejoindront le tableau après les rondes.
-              </p>
-              <div className="mt-3">
-                <AurardQualifiersForm
-                  action={saveAurardQualifierCountAction.bind(null, tournament.id)}
-                  automaticCount={bracketSizeForAurardTeamCount(teamCount)}
-                  selectedCount={selectedQualifierCount}
-                  choiceRequired={tournament.aurardQualifierChoiceRequired}
-                  options={availableAurardQualifierCounts(teamCount)}
-                  disabled={tournament.status !== "REGISTRATION"}
-                />
-              </div>
-            </div>
-          </Card>
-        )}
-
-          <Card>
+        <Card>
           <AddTeamForm
             disabled={registrationLocked}
             triplettes={tournament.teamComposition === "TRIPLETTES"}
@@ -93,6 +46,10 @@ export default async function TeamsPage({
           />
           {registrationLocked && <p className="mt-3 text-sm text-muted">{REGISTRATION_LOCK_MESSAGE}</p>}
         </Card>
+
+        <p className="text-[15px] text-muted">
+          <strong className="font-semibold text-accent">{tournament.teams.length}</strong> / {tournament.maxTeams} équipes max · <strong className="font-semibold text-accent">{paidCount}</strong> réglée(s)
+        </p>
 
         <div className="flex flex-col gap-2">
           {tournament.teams.map((team) => (

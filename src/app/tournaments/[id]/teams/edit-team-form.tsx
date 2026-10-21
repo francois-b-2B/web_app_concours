@@ -71,7 +71,7 @@ export function EditTeamForm({
         onFocus={(event) => event.currentTarget.select()}
         required
       />
-      <Input name="contact" defaultValue={contact ?? ""} placeholder="Contact (optionnel)" />
+      <Input name="contact" defaultValue={contact ?? ""} placeholder="Tél. (facultatif)" />
       <div className="flex gap-2">
         <Button type="submit" size="md" disabled={pending}>
           {pending ? "Enregistrement…" : "Enregistrer"}

@@ -38,7 +38,7 @@ export function AddTeamForm({
         <option value="PENDING">En attente</option>
         <option value="PAID">Réglée</option>
       </Select>
-      <Input name="contact" placeholder="Contact (optionnel)" className="sm:flex-1" />
+      <Input name="contact" placeholder="Tél. (facultatif)" className="sm:flex-1" />
       <Button type="submit" disabled={pending} className="whitespace-nowrap">
         {pending ? "Ajout…" : "Ajouter"}
       </Button>

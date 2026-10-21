@@ -22,8 +22,8 @@ export default async function TournamentLayout({
   const sportLabel = tournament.format === "BELOTE" ? "Belote" : "Boules";
   const compositionLabel = tournament.teamComposition === "TRIPLETTES" ? "Triplettes" : "Doublettes";
   const formatLabel = tournament.competitionMode === "AURARD"
-    ? "Rondes + tableau final"
-    : "Poules + tableau final";
+    ? "Ronde + Tableau final (pour association), réduit le temps d’attente"
+    : "Poules + Tableau final (concours officiel)";
 
   const tabs = [
     { href: `/tournaments/${id}/teams`, label: "Inscriptions" },
