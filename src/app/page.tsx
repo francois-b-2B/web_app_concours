@@ -72,6 +72,17 @@ export default function Home() {
             <p className="absolute top-full mt-2 whitespace-nowrap text-[13px] text-muted">Mode essai · rien n’est sauvegardé</p>
           </div>
         </div>
+        <div className="mt-5 flex flex-col items-center gap-2">
+          <ButtonLink
+            href="/presentation"
+            variant="outline"
+            size="lg"
+            aria-label="Voir la vidéo de présentation"
+          >
+            Voir la présentation
+          </ButtonLink>
+          <p className="text-[13px] text-muted">Vidéo de présentation · 38 secondes</p>
+        </div>
       </section>
 
       <section className="w-full max-w-5xl px-6 py-24 grid grid-cols-1 sm:grid-cols-3 gap-6">
