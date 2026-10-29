@@ -79,7 +79,7 @@ export default async function AdminStatisticsPage() {
         <div>
           <p className="text-[14px] font-semibold uppercase tracking-wide text-accent">Vue d’ensemble</p>
           <h1 className="mt-2 text-3xl font-bold">Statistiques</h1>
-          <p className="mt-2 text-muted">Suivi global de l’utilisation de Concours Belote &amp; Boules.</p>
+          <p className="mt-2 text-muted">Suivi global de l’utilisation de Concours Boules &amp; Belote.</p>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">

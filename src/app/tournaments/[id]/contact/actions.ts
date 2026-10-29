@@ -103,7 +103,7 @@ export async function sendContactAction(
     subject: `Contact — ${parsed.data.subjects.join(", ")}`,
     html: `
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#171717;line-height:1.6">
-        <h2>Nouveau message depuis Concours Belote &amp; Boules</h2>
+        <h2>Nouveau message depuis Concours Boules &amp; Belote</h2>
         <p><strong>Nom :</strong> ${escapeHtml(contactName)}</p>
         <p><strong>E-mail :</strong> ${escapeHtml(contactEmail)}</p>
         <p><strong>Motif :</strong> ${parsed.data.subjects.map(escapeHtml).join(", ")}</p>

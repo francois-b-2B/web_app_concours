@@ -38,6 +38,7 @@ export default async function TournamentLayout({
     { href: `/tournaments/${id}/share`, label: "QR code" },
     { href: `/tournaments/${id}/rules`, label: "Les règles" },
     { href: `/tournaments/${id}/contact`, label: "Contact" },
+    { href: "/statistics", label: "Statistiques" },
   ];
 
   return (

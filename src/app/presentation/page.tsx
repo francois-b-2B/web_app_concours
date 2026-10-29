@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ButtonLink } from "@/components/ui/button";
 
 export const metadata: Metadata = {
-  title: "Présentation | Concours Belote & Boules",
+  title: "Présentation | Concours Boules & Belote",
   description: "Découvrez en vidéo comment organiser un concours de boules ou de belote.",
 };
 

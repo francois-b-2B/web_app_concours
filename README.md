@@ -1,4 +1,4 @@
-# Concours Belote & Boules
+# Concours Boules & Belote
 
 Web app de gestion de concours de belote/boules (doublettes) : inscriptions, tirage des
 poules, feuilles de match, classement, tableau final à élimination directe.

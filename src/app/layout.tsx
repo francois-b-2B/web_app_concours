@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Concours Belote & Boules",
+  title: "Concours Boules & Belote",
   description: "Gestion de concours de belote et de boules — inscriptions, tirage, scores, classement, tableau final.",
 };
 
