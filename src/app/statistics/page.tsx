@@ -5,11 +5,12 @@ import { prisma } from "@/lib/prisma";
 
 const formatLabels = { BOULES: "Boules", BELOTE: "Belote" } as const;
 
-function buildTrendPoints(dates: Date[], days = 30): TrendPoint[] {
+function buildTrendPoints(dates: Date[], firstActivityDate: Date): TrendPoint[] {
   const end = new Date();
   end.setUTCHours(0, 0, 0, 0);
-  const start = new Date(end);
-  start.setUTCDate(start.getUTCDate() - days + 1);
+  const start = new Date(firstActivityDate);
+  start.setUTCHours(0, 0, 0, 0);
+  const days = Math.max(1, Math.floor((end.getTime() - start.getTime()) / 86_400_000) + 1);
   const counts = new Map<string, number>();
 
   for (const date of dates) {
@@ -21,7 +22,12 @@ function buildTrendPoints(dates: Date[], days = 30): TrendPoint[] {
   }
 
   let cumulative = dates.filter((date) => date < start).length;
-  const labelFormatter = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+  const labelFormatter = new Intl.DateTimeFormat("fr-FR", {
+    day: "numeric",
+    month: "short",
+    ...(start.getUTCFullYear() === end.getUTCFullYear() ? {} : { year: "numeric" }),
+    timeZone: "UTC",
+  });
   const points: TrendPoint[] = [];
 
   for (let index = 0; index < days; index += 1) {
@@ -47,9 +53,16 @@ export default async function PublicStatisticsPage() {
   ]);
 
   const playedMatches = aurardMatches + poolMatches + bracketMatches;
-  const accountTrend = buildTrendPoints(users.map((user) => user.createdAt));
-  const tournamentTrend = buildTrendPoints(tournaments.map((tournament) => tournament.createdAt));
-  const teamTrend = buildTrendPoints(teams.map((team) => team.createdAt));
+  const accountDates = users.map((user) => user.createdAt);
+  const tournamentDates = tournaments.map((tournament) => tournament.createdAt);
+  const teamDates = teams.map((team) => team.createdAt);
+  const allActivityDates = [...accountDates, ...tournamentDates, ...teamDates];
+  const firstActivityDate = allActivityDates.length > 0
+    ? new Date(Math.min(...allActivityDates.map((date) => date.getTime())))
+    : new Date();
+  const accountTrend = buildTrendPoints(accountDates, firstActivityDate);
+  const tournamentTrend = buildTrendPoints(tournamentDates, firstActivityDate);
+  const teamTrend = buildTrendPoints(teamDates, firstActivityDate);
 
   return (
     <main className="flex-1 px-6 py-10">
@@ -59,7 +72,7 @@ export default async function PublicStatisticsPage() {
           <p className="mt-8 text-[14px] font-semibold uppercase tracking-wide text-accent">L’application en chiffres</p>
           <h1 className="mt-2 text-3xl font-bold">Statistiques</h1>
           <p className="mt-2 max-w-2xl text-muted">
-            Une vue d’ensemble de l’activité de Concours Boules &amp; Belote.
+            Une vue d’ensemble de l’activité de l&apos;application.
           </p>
         </div>
 
@@ -79,8 +92,7 @@ export default async function PublicStatisticsPage() {
 
         <section aria-labelledby="evolution-title">
           <div>
-            <p className="text-[14px] font-semibold uppercase tracking-wide text-accent">Évolution sur 30 jours</p>
-            <h2 id="evolution-title" className="mt-2 text-2xl font-bold">La croissance de l’application</h2>
+            <h2 id="evolution-title" className="text-2xl font-bold">La croissance de l’application</h2>
           </div>
           <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
             <div className="lg:col-span-2">
@@ -96,7 +108,6 @@ export default async function PublicStatisticsPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-xl font-semibold">Disciplines</h2>
-                <p className="mt-1 text-[14px] text-muted">Les concours organisés.</p>
               </div>
               <Badge>{tournaments.length}</Badge>
             </div>
