@@ -12,6 +12,21 @@ const BACKGROUNDS: Record<PosterFormat, string> = {
   BOULES: "/images/affiche-boules-fond.png",
 };
 
+function PosterQrCode({ qrCode, x, y }: { qrCode: string; x: number; y: number }) {
+  return (
+    <g aria-label="Suivez les résultats en direct avec ce QR code">
+      <rect x={x} y={y} width="190" height="220" rx="16" fill="#ffffff" />
+      <text x={x + 95} y={y + 31} textAnchor="middle" fill="#050505" fontFamily="Arial Black, Arial, sans-serif" fontSize="12" fontWeight="900">
+        SUIVEZ LES RÉSULTATS
+      </text>
+      <text x={x + 95} y={y + 48} textAnchor="middle" fill="#050505" fontFamily="Arial Black, Arial, sans-serif" fontSize="12" fontWeight="900">
+        EN DIRECT
+      </text>
+      <image href={qrCode} x={x + 28} y={y + 65} width="135" height="135" preserveAspectRatio="xMidYMid meet" />
+    </g>
+  );
+}
+
 function frenchDate(value: string) {
   if (!value) return "DATE À PRÉCISER";
   return new Intl.DateTimeFormat("fr-FR", {
@@ -83,9 +98,11 @@ function Field({
 export function PosterEditor({
   format,
   teamComposition,
+  qrCode,
 }: {
   format: PosterFormat;
   teamComposition: TeamComposition;
+  qrCode: string;
 }) {
   const svgRef = useRef<SVGSVGElement>(null);
   const isBoules = format === "BOULES";
@@ -288,9 +305,9 @@ export function PosterEditor({
               <text x="500" y="1258" textAnchor="middle" fill="#ffffff" fontFamily="Arial Black, Arial, sans-serif" fontSize="22" fontWeight="900">
                 {bottomCenter.split(/\r?\n/).map((line, index) => <tspan key={`center-${index}`} x="500" dy={index === 0 ? 0 : 45}>{line}</tspan>)}
               </text>
-              <text x="830" y="1305" textAnchor="middle" fill="#ffffff" fontFamily="Arial Black, Arial, sans-serif" fontSize="24" fontWeight="900">
+              {qrCode ? <PosterQrCode qrCode={qrCode} x={760} y={1128} /> : <text x="830" y="1305" textAnchor="middle" fill="#ffffff" fontFamily="Arial Black, Arial, sans-serif" fontSize="24" fontWeight="900">
                 {bottomRight.split(/\r?\n/).map((line, index) => <tspan key={`right-${index}`} x="830" dy={index === 0 ? 0 : 45}>{line}</tspan>)}
-              </text>
+              </text>}
             </>
           ) : (
             <>
@@ -311,12 +328,13 @@ export function PosterEditor({
               <text x="500" y="588" textAnchor="middle" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="31" fontWeight="700">
                 à partir de {timeLabel(time)} - {address}
               </text>
-              <text x="758" y="1094" textAnchor="middle" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="67" fontWeight="800">
+              <text x={qrCode ? 250 : 758} y="1094" textAnchor="middle" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="67" fontWeight="800">
                 {stake}€
               </text>
-              <text x="758" y="1225" textAnchor="middle" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="22" fontWeight="700">
+              <text x={qrCode ? 250 : 758} y="1225" textAnchor="middle" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="22" fontWeight="700">
                 {percentage} % des mises reversées
               </text>
+              {qrCode && <PosterQrCode qrCode={qrCode} x={760} y={1070} />}
               <rect x="222" y="1310" width="556" height="52" rx="26" fill="#ce160c" />
               <text x="500" y="1346" textAnchor="middle" fill="#ffffff" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="700" letterSpacing="4">
                 {footer}

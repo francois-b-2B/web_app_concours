@@ -48,12 +48,15 @@ export default function Home() {
           sizes="112px"
         />
         <FreeGlassBadge />
-        <p className="text-[15px] font-semibold text-accent">
+        <p className="text-base font-semibold text-accent sm:text-lg">
           Boules • Belote
         </p>
-        <h1 className="text-5xl sm:text-7xl font-bold tracking-tight leading-tight">
+        <h1 className="text-4xl sm:text-6xl font-bold tracking-tight leading-tight">
           Organisez votre concours.
         </h1>
+        <p className="-mt-2 text-xl font-semibold text-accent sm:text-2xl">
+          Moins d’attente, plus de jeu.
+        </p>
         <p className="max-w-xl text-lg sm:text-xl text-muted">
           Inscriptions, tirages, rondes ou poules, classement et tableau final.
           Tout est calculé, sauvegardé et mis à jour automatiquement. Tous les joueurs peuvent consulter les résultats en temps réel sur leur téléphone.

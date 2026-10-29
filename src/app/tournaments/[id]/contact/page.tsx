@@ -20,8 +20,6 @@ export default async function ContactPage({ params }: { params: Promise<{ id: st
         <Card>
           <ContactForm
             action={sendContactAction.bind(null, id)}
-            defaultName={session.user.name ?? ""}
-            defaultEmail={session.user.email ?? ""}
           />
         </Card>
 

@@ -1,4 +1,6 @@
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
+import QRCode from "qrcode";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { PosterEditor } from "./poster-editor";
@@ -12,6 +14,15 @@ export default async function PosterPage({ params }: { params: Promise<{ id: str
   if (!tournament || tournament.ownerId !== session.user.id) notFound();
 
   const sportLabel = tournament.format === "BELOTE" ? "belote" : "boules";
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? (host?.includes("localhost") ? "http" : "https");
+  const publicUrl = `${protocol}://${host}/public/tournaments/${id}`;
+  const qrCode = await QRCode.toDataURL(publicUrl, {
+    width: 520,
+    margin: 2,
+    color: { dark: "#000000", light: "#ffffff" },
+  });
 
   return (
     <main className="flex-1 px-6 py-10">
@@ -26,6 +37,7 @@ export default async function PosterPage({ params }: { params: Promise<{ id: str
           key={`${tournament.format}-${tournament.teamComposition}`}
           format={tournament.format}
           teamComposition={tournament.teamComposition}
+          qrCode={qrCode}
         />
       </div>
     </main>

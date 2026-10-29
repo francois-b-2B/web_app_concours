@@ -130,7 +130,7 @@ export default async function DrawPage({ params }: { params: Promise<{ id: strin
           <div className="max-w-3xl mx-auto flex flex-col gap-8">
             {aurardLockedSummary}
             <div className="text-center">
-              <h1 className="text-3xl font-bold">Ronde {currentRound}</h1>
+              <h1 className="text-3xl font-bold text-[#ff9f0a]">Ronde {currentRound}</h1>
               <p className="text-muted mt-2">
                 {tournament.aurardRounds} partie(s) prévues, avec des adversaires tirés au sort.
               </p>
@@ -147,7 +147,7 @@ export default async function DrawPage({ params }: { params: Promise<{ id: strin
                 return (
                   <section key={round} className="flex flex-col gap-4">
                     <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border pb-2">
-                      <h2 className="text-xl font-semibold">Ronde {round}</h2>
+                      <h2 className="text-xl font-semibold text-[#ff9f0a]">Ronde {round}</h2>
                       <span className="text-sm text-muted">
                         {roundDone}/{visibleRoundMatches.length} résultat(s) · {visibleRoundMatches.length}/{roundMatches.length} rencontre(s) disponible(s) · {isCurrent ? "en cours" : "terminée"}
                       </span>

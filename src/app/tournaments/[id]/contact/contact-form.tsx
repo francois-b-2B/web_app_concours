@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input, Label } from "@/components/ui/input";
+import { Label } from "@/components/ui/input";
 import type { ContactState } from "./actions";
 
 const subjects = [
@@ -15,12 +15,8 @@ const subjects = [
 
 export function ContactForm({
   action,
-  defaultName,
-  defaultEmail,
 }: {
   action: (previousState: ContactState, formData: FormData) => Promise<ContactState>;
-  defaultName: string;
-  defaultEmail: string;
 }) {
   const [state, formAction, pending] = useActionState(action, {});
   const formRef = useRef<HTMLFormElement>(null);
@@ -36,16 +32,9 @@ export function ContactForm({
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="contact-name">Nom</Label>
-          <Input id="contact-name" name="name" defaultValue={defaultName} required />
-        </div>
-        <div className="flex flex-col gap-2">
-          <Label htmlFor="contact-email">Adresse e-mail</Label>
-          <Input id="contact-email" name="email" type="email" defaultValue={defaultEmail} required />
-        </div>
-      </div>
+      <p className="text-[14px] text-muted">
+        Votre identité est associée automatiquement à votre compte et n’est pas affichée dans ce formulaire.
+      </p>
 
       <fieldset className="flex flex-col gap-3">
         <legend className="text-[14px] font-medium text-muted mb-2">Motif</legend>

@@ -197,6 +197,16 @@ body {
   animation: champion-celebration-glow 3s ease-out both;
 }
 
+.champion-celebration__layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Two offset layers keep the same 3-second timing while doubling the visible
+   confetti density without changing particle size or burst choreography. */
+.champion-celebration__layer--2 { transform: translate(2px, -1px); }
+
 .champion-celebration__burst {
   position: absolute;
   top: 9%;

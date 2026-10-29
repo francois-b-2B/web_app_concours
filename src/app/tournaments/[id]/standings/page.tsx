@@ -39,8 +39,8 @@ export default async function StandingsPage({ params }: { params: Promise<{ id: 
             <h1 className="text-3xl font-bold">Classement des rondes</h1>
             <p className="mt-2 text-muted">Ronde {currentRound} · victoires, points marqués puis différence de points.</p>
           </div>
-          <Card className="p-0 overflow-hidden">
-            <table className="w-full text-[14px]">
+          <Card className="p-0 overflow-x-auto">
+            <table className="w-full min-w-[650px] text-[14px]">
               <thead><tr className="border-b border-border text-left text-muted">
                 <th className="px-4 py-3">#</th><th className="px-4 py-3">Équipe</th><th className="px-4 py-3 text-center">J</th><th className="px-4 py-3 text-center">V</th><th className="px-4 py-3 text-center">Points</th><th className="px-4 py-3 text-center">Diff.</th><th className="px-4 py-3 text-right">Qualifiée</th>
               </tr></thead>
@@ -99,8 +99,8 @@ export default async function StandingsPage({ params }: { params: Promise<{ id: 
 
         <div className="flex flex-col gap-6">
           <h2 className="text-xl font-semibold">Classement général</h2>
-          <Card className="p-0 overflow-hidden">
-            <table className="w-full text-[14px]">
+          <Card className="p-0 overflow-x-auto">
+            <table className="w-full min-w-[520px] text-[14px]">
               <thead>
                 <tr className="text-left text-muted border-b border-border">
                   <th className="px-4 py-3 font-medium">#</th>

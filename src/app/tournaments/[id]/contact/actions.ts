@@ -15,8 +15,6 @@ const allowedSubjects = [
 ] as const;
 
 const contactSchema = z.object({
-  name: z.string().trim().min(1, "Indiquez votre nom."),
-  email: z.string().trim().email("Indiquez une adresse e-mail valide."),
   subjects: z.array(z.enum(allowedSubjects)).min(1, "Sélectionnez au moins un motif."),
   message: z.string().trim().min(10, "Votre message doit contenir au moins 10 caractères."),
 });
@@ -55,8 +53,6 @@ export async function sendContactAction(
   if (!session?.user.id) notFound();
 
   const parsed = contactSchema.safeParse({
-    name: formData.get("name"),
-    email: formData.get("email"),
     subjects: formData.getAll("subjects"),
     message: formData.get("message"),
   });
@@ -64,6 +60,9 @@ export async function sendContactAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Formulaire invalide." };
   }
+
+  const contactName = session.user.name?.trim() || "Utilisateur";
+  const contactEmail = session.user.email?.trim().toLowerCase() || "non renseignée";
 
   try {
     const tournament = await prisma.tournament.findUnique({ where: { id: tournamentId } });
@@ -73,6 +72,8 @@ export async function sendContactAction(
       data: {
         userId: session.user.id,
         tournamentId,
+        name: contactName,
+        email: contactEmail,
         ...parsed.data,
       },
     });
@@ -98,13 +99,13 @@ export async function sendContactAction(
   const { error: emailError } = await resend.emails.send({
     from: process.env.RESEND_FROM_EMAIL ?? "Concours <onboarding@resend.dev>",
     to: recipient,
-    replyTo: parsed.data.email,
+    ...(session.user.email ? { replyTo: session.user.email } : {}),
     subject: `Contact — ${parsed.data.subjects.join(", ")}`,
     html: `
       <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#171717;line-height:1.6">
         <h2>Nouveau message depuis Concours Belote &amp; Boules</h2>
-        <p><strong>Nom :</strong> ${escapeHtml(parsed.data.name)}</p>
-        <p><strong>E-mail :</strong> ${escapeHtml(parsed.data.email)}</p>
+        <p><strong>Nom :</strong> ${escapeHtml(contactName)}</p>
+        <p><strong>E-mail :</strong> ${escapeHtml(contactEmail)}</p>
         <p><strong>Motif :</strong> ${parsed.data.subjects.map(escapeHtml).join(", ")}</p>
         <hr style="border:0;border-top:1px solid #ddd" />
         <p style="white-space:pre-wrap">${escapeHtml(parsed.data.message)}</p>
