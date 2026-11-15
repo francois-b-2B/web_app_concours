@@ -518,6 +518,31 @@ export function PosterEditor({
           </label>
         )}
         {isBoules && (
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-surface-2 p-3">
+            <div className="flex items-center gap-3">
+              <span className="flex-1 text-[12px] text-muted">Ajoutez la photo de votre association ou de votre terrain.</span>
+              <label className="cursor-pointer whitespace-nowrap rounded-full border border-accent px-3 py-2 text-[12px] font-semibold text-accent hover:bg-accent/10">
+                {customBackgroundUrl ? "Changer" : "Importer une photo"}
+                <input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="sr-only"
+                  onChange={(event) => {
+                    void importCustomBackground(event.target.files?.[0]);
+                    event.currentTarget.value = "";
+                  }}
+                />
+              </label>
+            </div>
+            {customBackgroundUrl && (
+              <button type="button" onClick={removeCustomBackground} className="self-start text-[12px] text-muted underline hover:text-foreground">
+                Retirer la photo importée
+              </button>
+            )}
+            {customBackgroundMessage && <p className="text-[12px] leading-relaxed text-muted" role="status">{customBackgroundMessage}</p>}
+          </div>
+        )}
+        {isBoules && (
           <fieldset className="flex flex-col gap-3 text-[14px] font-medium">
             <legend>Photo de fond</legend>
             <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Photo de fond de l’affiche">
@@ -536,44 +561,20 @@ export function PosterEditor({
                 </label>
               ))}
             </div>
-            <div className="flex flex-col gap-2 rounded-xl border border-dashed border-border bg-surface-2 p-3">
-              <div className="flex items-center gap-3">
-                {customBackgroundUrl ? (
-                  <label className={`flex min-w-0 flex-1 cursor-pointer items-center gap-3 rounded-lg border p-2 ${boulesBackground === "custom" ? "border-accent bg-accent/10" : "border-border"}`}>
-                    <input
-                      type="radio"
-                      name="boules-background"
-                      value="custom"
-                      checked={boulesBackground === "custom"}
-                      onChange={() => setBoulesBackground("custom")}
-                      className="sr-only"
-                    />
-                    <NextImage src={customBackgroundUrl} alt="" width={54} height={76} unoptimized className="aspect-[3508/4961] w-[54px] shrink-0 rounded-md object-cover" />
-                    <span className="min-w-0 flex-1 truncate text-[12px]">{customBackgroundName}</span>
-                  </label>
-                ) : (
-                  <span className="flex-1 text-[12px] text-muted">Ajoutez la photo de votre association ou de votre terrain.</span>
-                )}
-                <label className="cursor-pointer whitespace-nowrap rounded-full border border-accent px-3 py-2 text-[12px] font-semibold text-accent hover:bg-accent/10">
-                  {customBackgroundUrl ? "Changer" : "Importer une photo"}
-                  <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    className="sr-only"
-                    onChange={(event) => {
-                      void importCustomBackground(event.target.files?.[0]);
-                      event.currentTarget.value = "";
-                    }}
-                  />
-                </label>
-              </div>
-              {customBackgroundUrl && (
-                <button type="button" onClick={removeCustomBackground} className="self-start text-[12px] text-muted underline hover:text-foreground">
-                  Retirer la photo importée
-                </button>
-              )}
-              {customBackgroundMessage && <p className="text-[12px] leading-relaxed text-muted" role="status">{customBackgroundMessage}</p>}
-            </div>
+            {customBackgroundUrl && (
+              <label className={`flex cursor-pointer items-center gap-3 rounded-xl border p-2 ${boulesBackground === "custom" ? "border-accent bg-accent/10" : "border-border bg-surface-2 hover:border-accent/60"}`}>
+                <input
+                  type="radio"
+                  name="boules-background"
+                  value="custom"
+                  checked={boulesBackground === "custom"}
+                  onChange={() => setBoulesBackground("custom")}
+                  className="sr-only"
+                />
+                <NextImage src={customBackgroundUrl} alt="" width={54} height={76} unoptimized className="aspect-[3508/4961] w-[54px] shrink-0 rounded-md object-cover" />
+                <span className="min-w-0 flex-1 truncate text-[12px]">{customBackgroundName}</span>
+              </label>
+            )}
           </fieldset>
         )}
         {isBoules && (
