@@ -5,6 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 const formatLabels = { BOULES: "Boules", BELOTE: "Belote" } as const;
 
+// Statistics come from Prisma at request time; avoid querying the database during the build.
+export const dynamic = "force-dynamic";
+
 function buildTrendPoints(dates: Date[], firstActivityDate: Date): TrendPoint[] {
   const end = new Date();
   end.setUTCHours(0, 0, 0, 0);
