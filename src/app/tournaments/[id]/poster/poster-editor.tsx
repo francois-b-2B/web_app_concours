@@ -24,6 +24,7 @@ const BOULES_VISUALS = [
   { id: "duo", label: "Duo métallique et bois", src: "/images/boules-duo-metal-bois.png" },
 ] as const;
 type BoulesVisualId = (typeof BOULES_VISUALS)[number]["id"];
+type BoulesVisualBackdrop = "transparent" | "gray";
 type BoulesVisualInteraction = {
   pointerId: number;
   mode: "move" | "resize";
@@ -43,6 +44,7 @@ const BOULES_VISUAL_AREA = {
 const BOULES_VISUAL_MIN_SIZE = 120;
 // The default visual is 260 units; allow roughly twice that size when resizing.
 const BOULES_VISUAL_MAX_SIZE = 560;
+const BOULES_VISUAL_BACKDROP_PADDING = 18;
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(Math.max(value, minimum), maximum);
@@ -80,6 +82,40 @@ function drawImageContain(
     renderedWidth,
     renderedHeight,
   );
+}
+
+function drawRoundedRect(
+  context: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  radius: number,
+) {
+  const cornerRadius = Math.min(radius, width / 2, height / 2);
+  context.beginPath();
+  context.moveTo(x + cornerRadius, y);
+  context.lineTo(x + width - cornerRadius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + cornerRadius);
+  context.lineTo(x + width, y + height - cornerRadius);
+  context.quadraticCurveTo(x + width, y + height, x + width - cornerRadius, y + height);
+  context.lineTo(x + cornerRadius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - cornerRadius);
+  context.lineTo(x, y + cornerRadius);
+  context.quadraticCurveTo(x, y, x + cornerRadius, y);
+  context.closePath();
+}
+
+function visualBackdropBounds(x: number, y: number, size: number) {
+  const padding = BOULES_VISUAL_BACKDROP_PADDING;
+  const left = Math.max(0, x - padding);
+  const top = Math.max(0, y - padding);
+  return {
+    x: left,
+    y: top,
+    width: Math.min(1000 - left, size + padding * 2),
+    height: Math.min(1414 - top, size + padding * 2),
+  };
 }
 
 function PosterQrCode({ qrCode, x, y }: { qrCode: string; x: number; y: number }) {
@@ -182,6 +218,7 @@ export function PosterEditor({
   const [customBackgroundName, setCustomBackgroundName] = useState("");
   const [customBackgroundMessage, setCustomBackgroundMessage] = useState("");
   const [boulesVisual, setBoulesVisual] = useState<BoulesVisualId>("none");
+  const [boulesVisualBackdrop, setBoulesVisualBackdrop] = useState<BoulesVisualBackdrop>("transparent");
   const [boulesVisualGeometry, setBoulesVisualGeometry] = useState({ x: 370, y: 845, size: 260 });
   const [boulesVisualSelected, setBoulesVisualSelected] = useState(false);
   const boulesVisualInteractionRef = useRef<BoulesVisualInteraction | null>(null);
@@ -194,6 +231,7 @@ export function PosterEditor({
     : "/images/affiche-belote-vierge-v2.png";
   const selectedBoulesVisual = BOULES_VISUALS.find((visual) => visual.id === boulesVisual) ?? BOULES_VISUALS[0];
   const { x: bouleVisualX, y: bouleVisualY, size: bouleVisualSize } = boulesVisualGeometry;
+  const backdropBounds = visualBackdropBounds(bouleVisualX, bouleVisualY, bouleVisualSize);
   const [organizer, setOrganizer] = useState("ORGANISÉ PAR L’ASSOCIATION U SANTISSIMU RUSARIU");
   const [title, setTitle] = useState(isBoules ? "CONCOURS DE BOULES" : "CONCOURS DE BELOTE CONTRÉE");
   const [boulesTitleLine1, setBoulesTitleLine1] = useState("CONCOURS");
@@ -367,6 +405,22 @@ export function PosterEditor({
       const scaleX = POSTER_WIDTH / 1000;
       const scaleY = POSTER_HEIGHT / 1414;
       context.save();
+      if (boulesVisualBackdrop === "gray") {
+        const backdrop = visualBackdropBounds(bouleVisualX, bouleVisualY, bouleVisualSize);
+        drawRoundedRect(
+          context,
+          backdrop.x * scaleX,
+          backdrop.y * scaleY,
+          backdrop.width * scaleX,
+          backdrop.height * scaleY,
+          24 * scaleX,
+        );
+        context.fillStyle = "rgba(5, 7, 11, 0.72)";
+        context.fill();
+        context.strokeStyle = "rgba(255, 255, 255, 0.18)";
+        context.lineWidth = 2 * scaleX;
+        context.stroke();
+      }
       context.shadowColor = "rgba(0, 0, 0, 0.45)";
       context.shadowBlur = 18 * scaleX;
       context.shadowOffsetY = 10 * scaleY;
@@ -383,6 +437,7 @@ export function PosterEditor({
 
     const overlay = svgRef.current.cloneNode(true) as SVGSVGElement;
     overlay.querySelector('[data-poster-background="true"]')?.remove();
+    overlay.querySelector('[data-boule-visual="true"]')?.remove();
     overlay.querySelector('[data-boule-editor="true"]')?.remove();
     overlay.setAttribute("width", String(POSTER_WIDTH));
     overlay.setAttribute("height", String(POSTER_HEIGHT));
@@ -548,9 +603,40 @@ export function PosterEditor({
               ))}
             </div>
             {boulesVisual !== "none" && (
-              <p className="rounded-xl border border-border bg-surface-2 px-3 py-2 text-[12px] leading-relaxed text-muted">
-                Faites glisser la boule sur l’affiche. Utilisez la poignée bleue pour modifier sa taille.
-              </p>
+              <>
+                <fieldset className="flex flex-col gap-2">
+                  <legend className="text-[13px]">Entourage du visuel</legend>
+                  <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Entourage du visuel de boules">
+                    <label className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-[12px] ${boulesVisualBackdrop === "transparent" ? "border-accent bg-accent/10" : "border-border bg-surface-2"}`}>
+                      <input
+                        type="radio"
+                        name="boules-visual-backdrop"
+                        value="transparent"
+                        checked={boulesVisualBackdrop === "transparent"}
+                        onChange={() => setBoulesVisualBackdrop("transparent")}
+                        className="sr-only"
+                      />
+                      <span className="h-7 w-7 rounded border border-dashed border-muted bg-transparent" aria-hidden="true" />
+                      <span>Transparent</span>
+                    </label>
+                    <label className={`flex cursor-pointer items-center gap-2 rounded-lg border p-2 text-[12px] ${boulesVisualBackdrop === "gray" ? "border-accent bg-accent/10" : "border-border bg-surface-2"}`}>
+                      <input
+                        type="radio"
+                        name="boules-visual-backdrop"
+                        value="gray"
+                        checked={boulesVisualBackdrop === "gray"}
+                        onChange={() => setBoulesVisualBackdrop("gray")}
+                        className="sr-only"
+                      />
+                      <span className="h-7 w-7 rounded border border-white/20 bg-[#05070b]/70" aria-hidden="true" />
+                      <span>Fond gris sombre</span>
+                    </label>
+                  </div>
+                </fieldset>
+                <p className="rounded-xl border border-border bg-surface-2 px-3 py-2 text-[12px] leading-relaxed text-muted">
+                  Faites glisser la boule sur l’affiche. Utilisez la poignée bleue pour modifier sa taille.
+                </p>
+              </>
             )}
           </fieldset>
         )}
@@ -609,24 +695,41 @@ export function PosterEditor({
             preserveAspectRatio={boulesBackground === "custom" ? "xMidYMid slice" : "none"}
           />
           {isBoules && selectedBoulesVisual.src && (
-            <g data-boule-editor="true">
-              <image
-                href={selectedBoulesVisual.src}
-                x={bouleVisualX}
-                y={bouleVisualY}
-                width={bouleVisualSize}
-                height={bouleVisualSize}
-                preserveAspectRatio="xMidYMid meet"
-                aria-label="Déplacer le visuel de boules"
-                onPointerDown={(event) => startVisualInteraction(event, "move")}
-                style={{
-                  cursor: "grab",
-                  filter: "drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45))",
-                  touchAction: "none",
-                }}
-              />
+            <>
+              <g data-boule-visual="true">
+                {boulesVisualBackdrop === "gray" && (
+                  <rect
+                    x={backdropBounds.x}
+                    y={backdropBounds.y}
+                    width={backdropBounds.width}
+                    height={backdropBounds.height}
+                    rx="24"
+                    fill="#05070b"
+                    fillOpacity="0.72"
+                    stroke="#ffffff"
+                    strokeOpacity="0.18"
+                    strokeWidth="2"
+                    pointerEvents="none"
+                  />
+                )}
+                <image
+                  href={selectedBoulesVisual.src}
+                  x={bouleVisualX}
+                  y={bouleVisualY}
+                  width={bouleVisualSize}
+                  height={bouleVisualSize}
+                  preserveAspectRatio="xMidYMid meet"
+                  aria-label="Déplacer le visuel de boules"
+                  onPointerDown={(event) => startVisualInteraction(event, "move")}
+                  style={{
+                    cursor: "grab",
+                    filter: "drop-shadow(0 10px 18px rgba(0, 0, 0, 0.45))",
+                    touchAction: "none",
+                  }}
+                />
+              </g>
               {boulesVisualSelected && (
-                <>
+                <g data-boule-editor="true">
                   <rect
                     x={bouleVisualX}
                     y={bouleVisualY}
@@ -650,9 +753,9 @@ export function PosterEditor({
                     onPointerDown={(event) => startVisualInteraction(event, "resize")}
                     style={{ cursor: "nwse-resize", touchAction: "none" }}
                   />
-                </>
+                </g>
               )}
-            </g>
+            </>
           )}
           {isBoules ? (
             <>
