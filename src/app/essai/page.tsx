@@ -9,6 +9,7 @@ import { Badge, Card } from "@/components/ui/card";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input, Label, Select } from "@/components/ui/input";
 import { ScoreForm } from "@/components/tournament/score-form";
+import { ScrollableRankingTable } from "@/components/tournament/scrollable-ranking-table";
 import { ChampionCelebration } from "@/components/tournament/champion-celebration";
 import { FINALS_WAIT_MESSAGE, REGISTRATION_LOCK_MESSAGE, POOL_SCORE_LOCK_MESSAGE, planBracketScore, poolResultsComplete, validScore, scoreResult, type ScoreActionResult } from "@/lib/tournament/score-integrity";
 import { FreeGlassBadge } from "@/components/free-glass-badge";
@@ -132,7 +133,7 @@ function TrialPosterPreview({ format, qrCode }: { format: TrialFormat; qrCode: s
   const isBoules = format === "BOULES";
   return <section className="poster-print-area mx-auto w-full max-w-[620px] overflow-hidden rounded-[18px] border border-border bg-surface shadow-2xl">
     <svg viewBox="0 0 1000 1414" role="img" aria-label="Aperçu de l’affiche du concours" className="block h-auto w-full" xmlns="http://www.w3.org/2000/svg">
-      <image href={isBoules ? "/images/affiche-boules-fond.png" : "/images/affiche-belote-vierge-v2.png"} width="1000" height="1414" preserveAspectRatio="none" />
+      <image href={isBoules ? "/images/affiche-boules-fond-poster.png" : "/images/affiche-belote-vierge-v2.png"} width="1000" height="1414" preserveAspectRatio="none" />
       {isBoules ? <>
         <rect x="0" y="42" width="1000" height="270" fill="#ffffff" />
         <rect x="0" y="360" width="1000" height="92" fill="#ffffff" />
@@ -141,6 +142,9 @@ function TrialPosterPreview({ format, qrCode }: { format: TrialFormat; qrCode: s
         <text x="500" y="260" textAnchor="middle" fill="#050505" fontFamily="Impact, Arial Black, sans-serif" fontSize="78" fontWeight="900">DE BOULES</text>
         <text x="500" y="407" textAnchor="middle" dominantBaseline="central" fill="#050505" fontFamily="Impact, Arial Black, sans-serif" fontSize="34" fontWeight="900">15 AOÛT 2026 - PERO-CASEVECCHIE - 14H30</text>
         <text x="500" y="616" textAnchor="middle" dominantBaseline="central" fill="#050505" fontFamily="Impact, Arial Black, sans-serif" fontSize="37" fontWeight="900">20 € LA DOUBLETTE</text>
+        <rect x="30" y="1215" width="940" height="170" rx="26" fill="#05070b" fillOpacity="0.72" stroke="#ffffff" strokeOpacity="0.18" strokeWidth="2" />
+        <line x1="304" y1="1235" x2="304" y2="1365" stroke="#ffffff" strokeOpacity="0.55" strokeWidth="2.5" />
+        <line x1="678" y1="1235" x2="678" y2="1365" stroke="#ffffff" strokeOpacity="0.55" strokeWidth="2.5" />
         <text x="170" y="1258" textAnchor="middle" fill="#ffffff" fontFamily="Arial Black, Arial, sans-serif" fontSize="23" fontWeight="900">CI SERA DA BEIE{`\n`}È{`\n`}DA MANGHJÀ</text>
         <text x="500" y="1258" textAnchor="middle" fill="#ffffff" fontFamily="Arial Black, Arial, sans-serif" fontSize="22" fontWeight="900">LES MISES SONT{`\n`}INTEGRALEMENT{`\n`}REVERSEES</text>
         {qrCode ? <g aria-label="QR code d’exemple non actif"><rect x="760" y="1128" width="190" height="220" rx="16" fill="#ffffff" /><text x="855" y="1159" textAnchor="middle" fill="#050505" fontFamily="Arial Black, Arial, sans-serif" fontSize="12" fontWeight="900">SUIVEZ LES RÉSULTATS</text><text x="855" y="1176" textAnchor="middle" fill="#050505" fontFamily="Arial Black, Arial, sans-serif" fontSize="12" fontWeight="900">EN DIRECT</text><image href={qrCode} x="788" y="1193" width="135" height="135" preserveAspectRatio="xMidYMid meet" /></g> : <text x="830" y="1305" textAnchor="middle" fill="#ffffff" fontFamily="Arial Black, Arial, sans-serif" fontSize="24" fontWeight="900">VENEZ NOMBREUX !</text>}
@@ -522,7 +526,25 @@ export default function TrialPage() {
   function standingsContent() {
     if (competitionMode === "AURARD") {
       if (!aurardMatches.length) return <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center"><h1 className="text-3xl font-bold">Classement</h1><p className="text-muted">Le classement apparaîtra après le lancement de la première ronde.</p><Button type="button" onClick={() => setActiveTab("draw")}>Aller au tirage</Button></div>;
-      return <div className="mx-auto flex max-w-4xl flex-col gap-8"><div><h1 className="text-3xl font-bold">Classement des rondes</h1><p className="mt-2 text-muted">Victoires, points marqués puis différence de points.</p></div><Card className="overflow-hidden p-0"><div className="overflow-x-auto"><table className="w-full min-w-[650px] text-[14px]"><thead><tr className="border-b border-border text-left text-muted"><th className="px-4 py-3">#</th><th className="px-4 py-3">Équipe</th><th className="px-4 py-3 text-center">J</th><th className="px-4 py-3 text-center">V</th><th className="px-4 py-3 text-center">Points</th><th className="px-4 py-3 text-center">Diff.</th><th className="px-4 py-3 text-right">Qualifiée</th></tr></thead><tbody>{aurardStanding.map((row, index) => <tr key={row.teamId} className="border-b border-border last:border-0"><td className="px-4 py-3 text-muted">{index + 1}</td><td className="px-4 py-3">{nameOf(row.teamId)}</td><td className="px-4 py-3 text-center">{row.played}</td><td className="px-4 py-3 text-center">{row.wins}</td><td className="px-4 py-3 text-center">{row.pointsFor}</td><td className="px-4 py-3 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td><td className="px-4 py-3 text-right">{aurardComplete && index < currentAurardQualifierCount && <Badge>Qualifiée</Badge>}</td></tr>)}</tbody></table></div></Card>{aurardComplete && <p className="text-center text-muted">{aurardQualificationDescription(currentAurardQualifierCount)}</p>}</div>;
+      return <div className="mx-auto flex max-w-4xl flex-col gap-8">
+        <div>
+          <h1 className="text-3xl font-bold">Classement des rondes</h1>
+          <p className="mt-2 text-muted">Victoires, points marqués puis différence de points.</p>
+        </div>
+        <Card className="overflow-hidden p-0">
+          <ScrollableRankingTable>
+            <table className="w-full min-w-[650px] text-[14px]">
+              <thead><tr className="border-b border-border text-left text-muted">
+                <th className="sticky left-0 z-30 w-14 min-w-14 bg-surface px-4 py-3">#</th><th className="sticky left-14 z-30 min-w-[11rem] bg-surface px-4 py-3 shadow-[8px_0_10px_-10px_rgba(0,0,0,0.8)]">Équipe</th><th className="px-4 py-3 text-center">J</th><th className="px-4 py-3 text-center">V</th><th className="px-4 py-3 text-center">Points</th><th className="px-4 py-3 text-center">Diff.</th><th className="px-4 py-3 text-right">Qualifiée</th>
+              </tr></thead>
+              <tbody>{aurardStanding.map((row, index) => <tr key={row.teamId} className="border-b border-border last:border-0">
+                <td className="sticky left-0 z-20 w-14 min-w-14 bg-surface px-4 py-3 text-muted">{index + 1}</td><td className="sticky left-14 z-20 min-w-[11rem] bg-surface px-4 py-3 shadow-[8px_0_10px_-10px_rgba(0,0,0,0.8)]">{nameOf(row.teamId)}</td><td className="px-4 py-3 text-center">{row.played}</td><td className="px-4 py-3 text-center">{row.wins}</td><td className="px-4 py-3 text-center">{row.pointsFor}</td><td className="px-4 py-3 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td><td className="px-4 py-3 text-right">{aurardComplete && index < currentAurardQualifierCount && <Badge>Qualifiée</Badge>}</td>
+              </tr>)}</tbody>
+            </table>
+          </ScrollableRankingTable>
+        </Card>
+        {aurardComplete && <p className="text-center text-muted">{aurardQualificationDescription(currentAurardQualifierCount)}</p>}
+      </div>;
     }
     if (!pools.length) return <div className="mx-auto flex max-w-2xl flex-col items-center gap-6 text-center"><h1 className="text-3xl font-bold">Classement</h1><p className="text-muted">Le tirage n’a pas encore été effectué.</p><Button type="button" onClick={() => setActiveTab("draw")}>Aller au tirage</Button></div>;
     return <div className="mx-auto flex max-w-4xl flex-col gap-10"><h1 className="text-3xl font-bold">Classement</h1><div className="flex flex-col gap-6"><h2 className="text-xl font-semibold">Classement général</h2><Card className="overflow-hidden p-0"><div className="overflow-x-auto"><table className="w-full min-w-[650px] text-[14px]"><thead><tr className="border-b border-border text-left text-muted"><th className="px-4 py-3 font-medium">#</th><th className="px-4 py-3 font-medium">{teamLabel}</th><th className="px-4 py-3 font-medium">Poule</th><th className="px-4 py-3 text-center font-medium">V</th><th className="px-4 py-3 text-center font-medium">Diff</th><th className="px-4 py-3 text-right font-medium">Qualifié</th></tr></thead><tbody>{generalStanding.map((row) => <tr key={row.teamId} className="border-b border-border last:border-0"><td className="px-4 py-3 text-muted">{row.rankGeneral}</td><td className="px-4 py-3">{nameOf(row.teamId)}</td><td className="px-4 py-3 text-muted">{row.poolLetter} ({row.rankInPool}{row.rankInPool === 1 ? "re" : "e"})</td><td className="px-4 py-3 text-center">{row.wins}</td><td className="px-4 py-3 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td><td className="px-4 py-3 text-right">{row.rankGeneral <= qualifiedCount && <Badge>Qualifié</Badge>}</td></tr>)}</tbody></table></div></Card></div><div className="flex flex-col gap-6"><h2 className="text-xl font-semibold">Par poule</h2><div className="grid grid-cols-1 gap-5 sm:grid-cols-2">{rankedPools.map((pool) => <Card key={pool.letter} className="flex flex-col gap-3"><h3 className="text-lg font-semibold">Poule {pool.letter}</h3><table className="w-full text-[14px]"><thead><tr className="text-left text-muted"><th className="py-1.5 font-medium">{teamLabel}</th><th className="py-1.5 text-center font-medium">J</th><th className="py-1.5 text-center font-medium">V</th><th className="py-1.5 text-center font-medium">Diff</th></tr></thead><tbody>{pool.standings.map((row) => <tr key={row.teamId}><td className="py-1.5">{nameOf(row.teamId)}</td><td className="py-1.5 text-center">{row.played}</td><td className="py-1.5 text-center">{row.wins}</td><td className="py-1.5 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td></tr>)}</tbody></table></Card>)}</div></div></div>;

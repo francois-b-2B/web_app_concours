@@ -3,6 +3,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { Card, Badge } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
+import { ScrollableRankingTable } from "@/components/tournament/scrollable-ranking-table";
 import { aurardQualificationDescription, aurardQualifierCountForTournament, aurardRoundsComplete, rankPoolStandings, computeGeneralStandings, bracketSizeForPoolCount, rankAurardTeams } from "@/lib/tournament";
 
 export default async function StandingsPage({ params }: { params: Promise<{ id: string }> }) {
@@ -39,15 +40,17 @@ export default async function StandingsPage({ params }: { params: Promise<{ id: 
             <h1 className="text-3xl font-bold">Classement des rondes</h1>
             <p className="mt-2 text-muted">Ronde {currentRound} · victoires, points marqués puis différence de points.</p>
           </div>
-          <Card className="p-0 overflow-x-auto">
-            <table className="w-full min-w-[650px] text-[14px]">
-              <thead><tr className="border-b border-border text-left text-muted">
-                <th className="px-4 py-3">#</th><th className="px-4 py-3">Équipe</th><th className="px-4 py-3 text-center">J</th><th className="px-4 py-3 text-center">V</th><th className="px-4 py-3 text-center">Points</th><th className="px-4 py-3 text-center">Diff.</th><th className="px-4 py-3 text-right">Qualifiée</th>
-              </tr></thead>
-              <tbody>{ranking.map((row, index) => <tr key={row.teamId} className="border-b border-border last:border-0">
-                <td className="px-4 py-3 text-muted">{index + 1}</td><td className="px-4 py-3">{teamName(row.teamId)}</td><td className="px-4 py-3 text-center">{row.played}</td><td className="px-4 py-3 text-center">{row.wins}</td><td className="px-4 py-3 text-center">{row.pointsFor}</td><td className="px-4 py-3 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td><td className="px-4 py-3 text-right">{complete && index < qualifiedCount && <Badge>Qualifiée</Badge>}</td>
-              </tr>)}</tbody>
-            </table>
+          <Card className="overflow-hidden p-0">
+            <ScrollableRankingTable>
+              <table className="w-full min-w-[650px] text-[14px]">
+                <thead><tr className="border-b border-border text-left text-muted">
+                  <th className="sticky left-0 z-30 w-14 min-w-14 bg-surface px-4 py-3">#</th><th className="sticky left-14 z-30 min-w-[11rem] bg-surface px-4 py-3 shadow-[8px_0_10px_-10px_rgba(0,0,0,0.8)]">Équipe</th><th className="px-4 py-3 text-center">J</th><th className="px-4 py-3 text-center">V</th><th className="px-4 py-3 text-center">Points</th><th className="px-4 py-3 text-center">Diff.</th><th className="px-4 py-3 text-right">Qualifiée</th>
+                </tr></thead>
+                <tbody>{ranking.map((row, index) => <tr key={row.teamId} className="border-b border-border last:border-0">
+                  <td className="sticky left-0 z-20 w-14 min-w-14 bg-surface px-4 py-3 text-muted">{index + 1}</td><td className="sticky left-14 z-20 min-w-[11rem] bg-surface px-4 py-3 shadow-[8px_0_10px_-10px_rgba(0,0,0,0.8)]">{teamName(row.teamId)}</td><td className="px-4 py-3 text-center">{row.played}</td><td className="px-4 py-3 text-center">{row.wins}</td><td className="px-4 py-3 text-center">{row.pointsFor}</td><td className="px-4 py-3 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td><td className="px-4 py-3 text-right">{complete && index < qualifiedCount && <Badge>Qualifiée</Badge>}</td>
+                </tr>)}</tbody>
+              </table>
+            </ScrollableRankingTable>
           </Card>
           {complete && <p className="text-center text-muted">{aurardQualificationDescription(qualifiedCount)}</p>}
         </div>

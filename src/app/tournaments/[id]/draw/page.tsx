@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/card";
 import { ButtonLink } from "@/components/ui/button";
 import { ScoreForm } from "@/components/tournament/score-form";
+import { ScrollableRankingTable } from "@/components/tournament/scrollable-ranking-table";
 import {
   computePoolPlan,
   InvalidTeamCountError,
@@ -190,29 +191,32 @@ export default async function DrawPage({ params }: { params: Promise<{ id: strin
               <div className="p-5">
                 <h2 className="text-xl font-semibold">Classement provisoire</h2>
               </div>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-t border-border text-left text-muted">
-                    <th className="px-5 py-3">#</th><th className="px-5 py-3">Équipe</th>
-                    <th className="px-5 py-3 text-center">V</th><th className="px-5 py-3 text-center">Points</th>
-                    <th className="px-5 py-3 text-center">Diff.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ranking.map((entry, index) => {
-                    const team = tournament.teams.find((item) => item.id === entry.teamId);
-                    return (
-                      <tr key={entry.teamId} className="border-t border-border">
-                        <td className="px-5 py-3 text-muted">{index + 1}</td>
-                        <td className="px-5 py-3">{teamName(team ?? null)}</td>
-                        <td className="px-5 py-3 text-center">{entry.wins}</td>
-                        <td className="px-5 py-3 text-center">{entry.pointsFor}</td>
-                        <td className="px-5 py-3 text-center">{entry.diff > 0 ? `+${entry.diff}` : entry.diff}</td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+              <ScrollableRankingTable hint="Glissez pour voir la différence de points">
+                <table className="w-full min-w-[580px] text-sm">
+                  <thead>
+                    <tr className="border-t border-border text-left text-muted">
+                      <th className="sticky left-0 z-30 w-14 min-w-14 bg-surface px-5 py-3">#</th>
+                      <th className="sticky left-14 z-30 min-w-[11rem] bg-surface px-5 py-3 shadow-[8px_0_10px_-10px_rgba(0,0,0,0.8)]">Équipe</th>
+                      <th className="px-5 py-3 text-center">V</th><th className="px-5 py-3 text-center">Points</th>
+                      <th className="px-5 py-3 text-center">Diff.</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {ranking.map((entry, index) => {
+                      const team = tournament.teams.find((item) => item.id === entry.teamId);
+                      return (
+                        <tr key={entry.teamId} className="border-t border-border">
+                          <td className="sticky left-0 z-20 w-14 min-w-14 bg-surface px-5 py-3 text-muted">{index + 1}</td>
+                          <td className="sticky left-14 z-20 min-w-[11rem] bg-surface px-5 py-3 shadow-[8px_0_10px_-10px_rgba(0,0,0,0.8)]">{teamName(team ?? null)}</td>
+                          <td className="px-5 py-3 text-center">{entry.wins}</td>
+                          <td className="px-5 py-3 text-center">{entry.pointsFor}</td>
+                          <td className="px-5 py-3 text-center">{entry.diff > 0 ? `+${entry.diff}` : entry.diff}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </ScrollableRankingTable>
             </Card>
             {allRoundsDone ? (
               <Card className="text-center">

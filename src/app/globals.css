@@ -40,6 +40,22 @@ body {
   overflow-x: clip;
 }
 
+/* Large rankings remain usable in portrait mode: only the table scrolls. */
+.ranking-table-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-color: var(--accent) transparent;
+  scrollbar-width: thin;
+}
+
+.ranking-table-scroll::-webkit-scrollbar {
+  height: 6px;
+}
+
+.ranking-table-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--accent);
+}
+
 .active-tab-shine {
   position: relative;
   isolation: isolate;

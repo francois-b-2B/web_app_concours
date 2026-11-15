@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { aurardQualifierCountForTournament, aurardRoundsComplete, computeGeneralStandings, playingAreaLabel, rankAurardTeams, rankPoolStandings, visibleAurardMatches } from "@/lib/tournament";
 import { AutoRefresh } from "./auto-refresh";
 import { ChampionCelebration } from "@/components/tournament/champion-celebration";
+import { ScrollableRankingTable } from "@/components/tournament/scrollable-ranking-table";
 
 export const dynamic = "force-dynamic";
 
@@ -236,23 +237,25 @@ export default async function PublicTournamentPage({ params }: { params: Promise
             tournament.aurardMatches.length === 0 ? (
               <p className="text-muted">Le classement apparaîtra après le début des rondes.</p>
             ) : (
-              <Card className="overflow-x-auto p-0">
-                <table className="w-full min-w-[650px] text-sm">
-                  <thead><tr className="border-b border-border text-left text-muted">
-                    <th className="px-4 py-3">#</th><th className="px-4 py-3">Équipe</th>
-                    <th className="px-4 py-3 text-center">Parties</th><th className="px-4 py-3 text-center">V</th>
-                    <th className="px-4 py-3 text-center">Points</th><th className="px-4 py-3 text-center">Diff.</th>
-                    <th className="px-4 py-3 text-right">Qualifiée</th>
-                  </tr></thead>
-                  <tbody>{aurardRanking.map((row, index) => (
-                    <tr key={row.teamId} className="border-b border-border last:border-0">
-                      <td className="px-4 py-3 text-muted">{index + 1}</td><td className="px-4 py-3">{teamNameById.get(row.teamId)}</td>
-                      <td className="px-4 py-3 text-center">{row.played}</td><td className="px-4 py-3 text-center">{row.wins}</td>
-                      <td className="px-4 py-3 text-center">{row.pointsFor}</td><td className="px-4 py-3 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td>
-                      <td className="px-4 py-3 text-right">{aurardRoundsAreComplete && index < aurardQualifiedCount && <Badge>Qualifiée</Badge>}</td>
-                    </tr>
-                  ))}</tbody>
-                </table>
+              <Card className="overflow-hidden p-0">
+                <ScrollableRankingTable>
+                  <table className="w-full min-w-[650px] text-sm">
+                    <thead><tr className="border-b border-border text-left text-muted">
+                      <th className="sticky left-0 z-30 w-14 min-w-14 bg-surface px-4 py-3">#</th><th className="sticky left-14 z-30 min-w-[11rem] bg-surface px-4 py-3 shadow-[8px_0_10px_-10px_rgba(0,0,0,0.8)]">Équipe</th>
+                      <th className="px-4 py-3 text-center">Parties</th><th className="px-4 py-3 text-center">V</th>
+                      <th className="px-4 py-3 text-center">Points</th><th className="px-4 py-3 text-center">Diff.</th>
+                      <th className="px-4 py-3 text-right">Qualifiée</th>
+                    </tr></thead>
+                    <tbody>{aurardRanking.map((row, index) => (
+                      <tr key={row.teamId} className="border-b border-border last:border-0">
+                        <td className="sticky left-0 z-20 w-14 min-w-14 bg-surface px-4 py-3 text-muted">{index + 1}</td><td className="sticky left-14 z-20 min-w-[11rem] bg-surface px-4 py-3 shadow-[8px_0_10px_-10px_rgba(0,0,0,0.8)]">{teamNameById.get(row.teamId)}</td>
+                        <td className="px-4 py-3 text-center">{row.played}</td><td className="px-4 py-3 text-center">{row.wins}</td>
+                        <td className="px-4 py-3 text-center">{row.pointsFor}</td><td className="px-4 py-3 text-center">{row.diff > 0 ? `+${row.diff}` : row.diff}</td>
+                        <td className="px-4 py-3 text-right">{aurardRoundsAreComplete && index < aurardQualifiedCount && <Badge>Qualifiée</Badge>}</td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </ScrollableRankingTable>
               </Card>
             )
           ) : generalPoolRanking.length === 0 ? (
